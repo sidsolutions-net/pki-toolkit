@@ -1,0 +1,109 @@
+##############################################################
+#  Author     : Sid McLaurin
+#  Copyright  : Copyright (c) SID Solutions
+#  Date       : 03/19/2019
+#  Version    : 1.0
+#  License    : GNU General Public License
+##############################################################
+#  Description:
+# - Windows PKI network commands
+##############################################################
+# Purpose:
+# - provide network commands for certificate troubleshooting
+#   and pre & post validation of certificate deployment
+#
+# Requirements:
+# - dates
+# - subject / CN
+# - CA chain - to do
+# - SANs entries
+# - issuer
+# - signature algorithm
+# - serial number
+# - thumbprint / fingerprint
+# - public key
+#
+# Method:
+# - openssl with standard DOS commands.
+#
+# Usage:
+# - Set test subject in an environment variable
+# - Set validation port in an environment variable
+#
+# Notes:
+# - All commands send SNI (-servername)
+# - Works! Great for both employee & client education if
+#   installation of openssl is permitted.
+# - Preferably ran on the server(s) that is experiencing
+#   certificate issues due to the rise of "sanctioned" MITM
+#   attacks and firewalls. See the certificate & CA chain they see!
+# - Requires an installation of OpenSSL with s_client
+#   functionality. Commands are expecting to be ran in the
+#   OpenSSL install \bin directory or in your PATH.
+# - Disappointing I can't just pipe echo "Q\n" in DOS
+#   Use Ctl+C or Q+Enter to break the connection
+# - The "clean up" CN scripts expect the DN. If the cert
+#   is DN reversed like LDAP you will need to add
+#   the "-nameopt RFC2253" to openssl x509 command. The
+#   current google.com certificate is a good example:
+#   subject= /C=US/ST=California/L=Mountain View/O=Google LLC/CN=*.google.com
+# - You might need to the tweak the for /f "tokens" like
+#   I've done because AWS Certificate Manager just took used
+#   the CN
+##############################################################
+
+# Initialize with test subject
+## Replace with correct value for your case
+SET testSubject="portfolio.sidsolutions.org"
+
+# Initialize with validation port
+## Replace with correct value for test case
+SET testPort="443"
+
+# Get the server certificate's begin and end dates
+openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -dates
+
+# Get the server certificate's expiration date
+# Note: After hitting "enter", Type "Q" and enter again to get the command to return otherwise
+# you will have to wait until it times out. Ctl+C will end the connection but return nothing
+for /f "tokens=2 delims==" %i in ('openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2^>nul^| openssl x509 -noout -enddate') do @echo %i
+
+# Get the server certificate's subject
+openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -subject
+
+# Same as above but showing Common NameInput
+# Note: After hitting "enter", Type "Q" and enter again to get the command to return otherwise
+# you will have to wait until it times out. Ctl+C will end the connection but return nothing
+for /f "tokens=3 delims==" %i in ('openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2^>nul^| openssl x509 -noout -subject') do @echo %i | for /f "tokens=1 delims=," %f in ('more') do @echo %f
+
+# Get the SAN(s) from the server certificate
+openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -text | findstr DNS
+
+# Get the issuer of the server certificate
+openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -issuer
+
+# Same as above just show just the Common Name of the issuer
+# Note: After hitting "enter", Type "Q" and enter again to get the command to return otherwise
+# you will have to wait until it times out. Ctl+C will end the connection but return nothing
+for /f "tokens=2 delims==" %i in ('openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2^>nul^| openssl x509 -noout -issuer') do @echo %i | for /f "tokens=1 delims=," %f in ('more') do @echo %f
+
+# Get the signature algorithm of the server certificate
+# Question: Why is the signature algorithm repeated in a certificate?
+# Answer:   https://tools.ietf.org/html/rfc6211
+openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -text | findstr /c:"Signature Algorithm"
+
+# Get the server certificate's serial number:
+ openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -serial
+
+# Get the server's certificate thumbprints / fingerprints:
+## SHA1 - Microsoft's preference
+openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -sha1
+
+## SHA256
+openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -sha256
+
+## MD5
+openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -md5
+
+# Get the server's certificate public key:
+openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -pubkey
