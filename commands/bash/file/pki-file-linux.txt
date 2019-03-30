@@ -1,0 +1,127 @@
+##############################################################
+#  Author     : Sid McLaurin
+#  Copyright  : Copyright (c) SID Solutions
+#  Date       : 03/19/2019
+#  Version    : 1.0
+#  License    : GNU General Public License
+# GitHub Repo : https://github.com/sidsolutions-net/pki-toolkit
+##############################################################
+#  Description:
+# - *nix PKI file commands
+##############################################################
+# Purpose:
+# - provide file commands for certificate troubleshooting
+#   and pre & post validation of certificate deployment
+#
+# Requirements:
+# - CSR generation
+# - dates
+# - subject / CN
+# - CA chain
+# - SANs entries
+# - issuer
+# - signature algorithm
+# - key pair match
+# - serial number
+# - thumbprint / fingerprint
+# - public key
+# - HTTP Pins
+#
+# Method:
+# - openssl with standard shell commands
+#
+# Usage:
+# - Set test subject in an environment variable
+# - Set your values like subject
+#   accordingly. Find & replace the file extensions
+#   (.csr, .key, .pem, etc) if necessary
+#
+# Notes:
+# - Works! Great for both employee & client education.
+##############################################################
+
+# Initialize with test subject
+## Replace with correct value for your test case
+testSubject="portfolio.sidsolutions.org"
+
+# Generate a CSR
+openssl req -nodes -sha256 -newkey rsa:2048 -keyout $testSubjet.key -out $testSubjet.csr -subj "/CN=portfolio.sidsolutions.org/O=SID Solutions/OU=Resume Department/L=Fort Walton Beach/ST=Florida/C=US/"
+
+# Validate your CSR
+## Verify
+openssl req -in $testSubjet.csr -noout -verify
+
+## Subject
+openssl req -in $testSubjet.csr -noout -subject
+
+## Public Key
+openssl req -in $testSubjet.csr -noout -pubkey
+
+## Signature algorithm
+openssl req -in $testSubjet.csr -noout -text | grep "Signature Algorithm"
+
+## Modulus to MD5 hash
+openssl req -in $testSubjet.csr -noout -modulus | openssl md5
+
+# Get the server certificate's begin and end dates:
+openssl x509 -in $testSubjet.pem -noout -dates
+
+# Get the server certificate's expiration date:
+openssl x509 -in $testSubjet.pem -noout -enddate
+
+# Get the server certificate's subject:
+openssl x509 -in $testSubjet.pem -noout -subject
+
+# Same as above but showing Common Name:
+openssl x509 -in $testSubjet.pem -noout -subject | sed 's/^.*CN=\(.*\)$/\1/'
+
+# Get all the cerificate and the CA chain that is being sent, split into separate files and renamed to their subject
+# replacing spaces & commans with underscores:
+# Note: Broke it down to 2 commands for better readability
+echo -e "Q\n" | openssl s_client -showcerts -servername $testSubjet -connect $testSubjet:443 < /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+for cert in *.pem; do newname=$(openssl x509 -noout -subject -in $cert | sed -n 's/^.*CN=\(.*\)$/\1/; s/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; done
+
+Get the SAN(s) from the server certificate:
+openssl x509 -in $testSubjet.pem -noout -text | grep -i DNS | sed "s/^[ \t]*//"
+
+# Get the issuer of the server certificate:
+openssl x509 -in $testSubjet.pem -noout -issuer
+
+# Same as above just show just the Common Name of the issuer:
+openssl x509 -in $testSubjet.pem -noout -issuer | sed 's/^.*CN=\(.*\)$/\1/'
+
+# Get the signature algorithm of the server certificate:
+# Question: Why is the signature algorithm repeated in a certificate?
+# Answer:   https://tools.ietf.org/html/rfc6211
+openssl x509 -in $testSubjet.pem -noout -text | grep 'Signature Algorithm'
+
+# Same but a single response:
+openssl x509 -in $testSubjet.pem -noout -text | grep 'Signature Algorithm' | uniq
+
+# Get the server certificate's serial number:
+openssl x509 -in $testSubjet.pem -noout -serial
+
+# Check the key pair for a match
+openssl x509 -in $testSubjet.pem -noout -modulus | openssl md5
+openssl rsa -in $testSubjet.key -noout -modulus | openssl md5
+
+# Check the CSR and private key for a match
+openssl req -in $testSubjet.csr -noout -modulus | openssl md5
+openssl rsa -in $testSubjet.key -noout -modulus | openssl md5
+
+
+# Get the server's certificate thumbprints / fingerprints:
+## SHA1 - Microsoft's preference
+openssl x509 -in $testSubjet.pem -noout -fingerprint -sha1
+
+## SHA256
+openssl x509 -in $testSubjet.pem -noout -fingerprint -sha256
+
+## MD5
+openssl x509 -in $testSubjet.pem -noout -fingerprint -md5
+
+# Get the server's certificate public key:
+openssl x509 -in $testSubjet.pem -noout -fingerprint -pubkey
+
+# Create HTTP Pin:
+openssl x509 -in $testSubjet.pem -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
