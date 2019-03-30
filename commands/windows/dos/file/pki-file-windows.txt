@@ -4,6 +4,7 @@
 #  Date       : 03/19/2019
 #  Version    : 1.0
 #  License    : GNU General Public License
+# GitHub Repo : https://github.com/sidsolutions-net/pki-toolkit
 ##############################################################
 #  Description:
 # - Windows PKI file commands
@@ -50,7 +51,7 @@
 ##############################################################
 
 # Initialize with test subject
-## Replace with correct value for your test case 
+## Replace with correct value for your test case
 SET testSubject="portfolio.sidsolutions.org"
 
 # Generate a CSR
