@@ -3,6 +3,7 @@ Collection of commands and scripts for PKI professionals to aid in troubleshooti
 
 ## Technologies Used
 - Bash
+  - OpenSSL
+  - Curl
 - DOS
-- OpenSSL
-- Curl
+  - OpenSSL
