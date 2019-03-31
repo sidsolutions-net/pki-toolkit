@@ -55,7 +55,7 @@
 
 # Initialize with test subject
 ## Replace with correct value for your case
-SET testSubject="portfolio.sidsolutions.org"
+SET testSubject="example.com"
 
 # Initialize with validation port
 ## Replace with correct value for test case

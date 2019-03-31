@@ -41,7 +41,7 @@
 
 # Initialize with test subject
 ## Replace with correct value for your test case
-testSubject="portfolio.sidsolutions.org"
+testSubject="example.com"
 
 # Initialize with validation port
 ## Replace with correct value for your test case

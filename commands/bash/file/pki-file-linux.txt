@@ -42,10 +42,10 @@
 
 # Initialize with test subject
 ## Replace with correct value for your test case
-testSubject="portfolio.sidsolutions.org"
+testSubject="example.com"
 
 # Generate a CSR
-openssl req -nodes -sha256 -newkey rsa:2048 -keyout $testSubjet.key -out $testSubjet.csr -subj "/CN=portfolio.sidsolutions.org/O=SID Solutions/OU=Resume Department/L=Fort Walton Beach/ST=Florida/C=US/"
+openssl req -nodes -sha256 -newkey rsa:2048 -keyout $testSubjet.key -out $testSubjet.csr -subj "/CN=example.com/O=SID Solutions/OU=Resume Department/L=Fort Walton Beach/ST=Florida/C=US/"
 
 # Validate your CSR
 ## Verify
