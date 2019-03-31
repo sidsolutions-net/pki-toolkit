@@ -1,4 +1,4 @@
-# PKI Tool Kit by SID Solutions
+# PKI Tool Kit
 ## Commands - DOS
 Requires:
- - OpenSSL 
+ - OpenSSL
