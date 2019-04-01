@@ -537,7 +537,7 @@ while read host port
 
       while [[ "$caCount" -le "$certCount" ]]
         do
-          caSubject=$(openssl x509 -noout -subject -in $tempDir/${host}${caCount}.pem | sed 's/^.*CN.*=\(.*\)$/\1/' | sed '[[:space:]]*')
+          caSubject=$(openssl x509 -noout -subject -in $tempDir/${host}${caCount}.pem | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/[[:space:]]*//')
           if [[ "$caCount" -eq 2 ]]
             then
               caChain=${caSubject}
