@@ -537,7 +537,7 @@ while read host port
 
       while [[ "$caCount" -le "$certCount" ]]
         do
-          caSubject=$(openssl x509 -noout -subject -in $tempDir/${host}${caCount}.pem | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/^ //')
+          caSubject=$(openssl x509 -noout -subject -in $tempDir/${host}${caCount}.pem | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/^ *//')
           if [[ "$caCount" -eq 2 ]]
             then
               caChain=${caSubject}
@@ -552,7 +552,7 @@ while read host port
           caCount=$(($caCount+1))
       done
     else
-      caChain=$((echo -e "Q\n" | openssl s_client -showcerts -servername $host -connect $host:$port < /dev/null 2>&1 | awk 'BEGIN { x509 = "openssl x509 -noout -subject" } /-----BEGIN CERTIFICATE-----/ { a = "" } { a = a $0 RS } /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/^ //')< /dev/null 2>&1)
+      caChain=$((echo -e "Q\n" | openssl s_client -showcerts -servername $host -connect $host:$port < /dev/null 2>&1 | awk 'BEGIN { x509 = "openssl x509 -noout -subject" } /-----BEGIN CERTIFICATE-----/ { a = "" } { a = a $0 RS } /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/^ *//')< /dev/null 2>&1)
   fi
   if [[ "$caChain" =~ "Expecting: TRUSTED" ]];
     then
@@ -564,7 +564,7 @@ while read host port
       then
         caChain="$(echo "$caChain" | awk 'NR==1,/(.*)/{sub(/(.*)/, "")}'1)"
     fi
-    caChain="$(echo "$caChain" | tr '\n' ',' | sed 's/^,//g' | sed 's/,/,\ /g')"
+    caChain="$(echo "$caChain" | tr '\n' ',' | sed 's/^,//g' | sed 's/,/,\ /g' | sed 's/, $//')"
     echo -e "   CA Chain: \033[1;32m$caChain\033[0m"
 
     # No real CSV spec, see https://www.csvreader.com/csv_format.php
@@ -578,9 +578,9 @@ while read host port
   # SANs
   if [ ! -z $SPEED ]
     then
-      san=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -i DNS | sed 's/^ +//')
+      san=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -i DNS | sed 's/^ *//')
     else
-      san=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -i DNS | sed 's/^ +//')< /dev/null 2>&1)
+      san=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -i DNS | sed 's/^ *//')< /dev/null 2>&1)
   fi
   if [[ "$san" =~ "Expecting: TRUSTED" ]];
     then
@@ -600,7 +600,7 @@ while read host port
   # Issuer
   if [ ! -z $SPEED ]
     then
-      issuer=$(openssl x509 -noout -issuer -in $tempDir/${host}1.pem | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/^ //')
+      issuer=$(openssl x509 -noout -issuer -in $tempDir/${host}1.pem | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/^ *//')
     else
       issuer=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -issuer | sed 's/^.*CN.*=\(.*\)$/\1/')< /dev/null 2>&1)
   fi
