@@ -7,3 +7,5 @@ Collection of commands and scripts for PKI professionals to aid in troubleshooti
   - Curl
 - DOS
   - OpenSSL
+- Java
+  - Keytool

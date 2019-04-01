@@ -1,14 +1,14 @@
-##############################################################
+#################################################################
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
 #  Date       : 03/19/2019
 #  Version    : 1.0
 #  License    : GNU General Public License
-# GitHub Repo : https://github.com/sidsolutions-net/pki-toolkit
-##############################################################
+#  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
+#################################################################
 #  Description:
 # - *nix PKI network commands
-##############################################################
+#################################################################
 # Purpose:
 # - provide network commands for certificate troubleshooting
 #   and pre & post validation of certificate deployment
@@ -36,8 +36,11 @@
 # - Works! Great for both employee & client education.
 # - Preferably ran on the server(s) that is experiencing
 #   certificate issues due to the rise of "sanctioned" MITM
-#   attacks and firewalls. See the certificate & CA chain they see!
-##############################################################
+#   attacks and firewalls. See the certificate & CA chain
+#   they see!
+#
+#   $Id: pki-network-linux.txt, v 1.0
+#################################################################
 
 # Initialize with test subject
 ## Replace with correct value for your test case

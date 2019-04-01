@@ -1,16 +1,16 @@
 #!/bin/bash
 
-#############################################################
+################################################################
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
 #  Date       : 03/25/2019
 #  Version    : 1.0
 #  License    : GNU General Public License
-# GitHub Repo : https://github.com/sidsolutions-net/pki-toolkit
-##############################################################
+#  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
+#################################################################
 #  Description:
-# - Remote PKI Validation Script
-##############################################################
+# - Remote PKI Validation Script - *nix
+#################################################################
 # Purpose:
 # - provide a network certificate validation script that
 #   can take .csv input and export optional .csv report
@@ -76,8 +76,8 @@
 #     for Windows and Linux
 #   - Lookup, CA Chain Validation, CRL Revocation Check &
 #     Layer 7 Check as optional
-#   - Speed option addition to leverage the first OpenSSL command
-#     to retrieve and temporarily store the files for
+#   - Speed option addition to leverage the first OpenSSL
+#     command to retrieve and temporarily store the files for
 #     processing.
 #
 # - 0.4
@@ -95,7 +95,7 @@
 #   - Better error handling and error feedback
 #
 #   $Id: networkPKIValidation.sh, v 1.0
-##############################################################
+#################################################################
 # Set Version Number
 VERSION="1.0"
 
