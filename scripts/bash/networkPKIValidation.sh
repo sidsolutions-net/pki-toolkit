@@ -552,7 +552,7 @@ while read host port
           caCount=$(($caCount+1))
       done
     else
-      caChain=$((echo -e "Q\n" | openssl s_client -showcerts -servername $host -connect $host:$port < /dev/null 2>&1 | awk 'BEGIN { x509 = "openssl x509 -noout -subject" } /-----BEGIN CERTIFICATE-----/ { a = "" } { a = a $0 RS } /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/^ +//')< /dev/null 2>&1)
+      caChain=$((echo -e "Q\n" | openssl s_client -showcerts -servername $host -connect $host:$port < /dev/null 2>&1 | awk 'BEGIN { x509 = "openssl x509 -noout -subject" } /-----BEGIN CERTIFICATE-----/ { a = "" } { a = a $0 RS } /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/^ //')< /dev/null 2>&1)
   fi
   if [[ "$caChain" =~ "Expecting: TRUSTED" ]];
     then
