@@ -115,8 +115,7 @@ Usage: `basename $0` -h -v -l -e [integer] -C -O -c -7 -S -o [file] -p file
           - c: CRL Revocation check
           - 7: Layer 7 HTTP HEAD / check
           - S: Speed optimization
-          - o: Output CSV of the results. Defaults to
-               networkPKIValidation/networkPKIValidation.csv
+          - o: Output CSV of the results.
           - p: Purge temp directory contents on exit
   Parameters:
       - file: Input CSV consiting of resolvable hostname and port
@@ -578,9 +577,9 @@ while read host port
   # SANs
   if [ ! -z $SPEED ]
     then
-      san=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -i DNS | sed 's/^ *//')
+      san=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -i DNS | sed 's/^[\t ]*//')
     else
-      san=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -i DNS | sed 's/^ *//')< /dev/null 2>&1)
+      san=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -i DNS | sed 's/^[\t ]*//')< /dev/null 2>&1)
   fi
   if [[ "$san" =~ "Expecting: TRUSTED" ]];
     then
