@@ -39,9 +39,15 @@
 # Notes:
 # - Works! Great for both employee & client education.
 #
-#   $Id: pki-file-keytool-linux.txt, v 1.0
+#   $Id: pki-file-keytool-windows.txt, v 1.0
 #################################################################
 
 ## Windows Commands
 # Set your keytool path. Allows for testing with multiple
 # version of Java
+
+myKeyTool="C:\Program Files (x86)\Java\jre1.8.0_201\bin\keytool"
+
+# Initialize with test subject
+## Replace with correct value for your test case
+SET testSubject="example.com"
