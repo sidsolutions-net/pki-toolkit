@@ -25,7 +25,6 @@
 # - serial number
 # - thumbprint / fingerprint
 # - public key
-# - HTTP Pins
 #
 # Method:
 # - keytool with standard shell commands
