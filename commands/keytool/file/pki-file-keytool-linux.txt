@@ -7,7 +7,7 @@
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
 #  Description:
-# - Keytool PKI file commands
+# - Keytool PKI Linux file commands
 #################################################################
 # Purpose:
 # - provide file commands for certificate troubleshooting
