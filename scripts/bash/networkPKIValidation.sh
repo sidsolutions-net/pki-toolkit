@@ -4,7 +4,7 @@
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
 #  Date       : 03/25/2019
-#  Version    : 1.0
+#  Version    : 1.1
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
@@ -26,6 +26,7 @@
 # - Issuer
 # - Signature Algorithm
 # - Serial Number
+# - Key & Extended Key Usage
 # - CRL Url
 # - CA Chain validation
 # - OCSP Validation
@@ -272,7 +273,7 @@ if [ -z $EXPIRY ]
 fi
 
 # Add the column labels to the output file
-echo "Host,Port,Lookup,Port Test,Common Name,LDAPv3 DN,Dates,End Date,Days To Expiration,CA Chain,SANs,Issuer,Signature Algorithm,Serial Number,CRL Url,CA Chain Validation,OCSP Check,CRL Status,Layer 7 Check" >$OUTPUT
+echo "Host,Port,Lookup,Port Test,Common Name,LDAPv3 DN,Dates,End Date,Days To Expiration,CA Chain,SANs,Issuer,Signature Algorithm,Serial Number,Key Usage,Extended Key Usage,CRL Url,CA Chain Validation,OCSP Check,CRL Status,Layer 7 Check" >$OUTPUT
 
 # Initialize Internal Field Separator
 OLDIFS=$IFS
@@ -362,6 +363,8 @@ while read host port
       issuer="Skipped"
       signature="Skipped"
       serial="Skipped"
+      keyUsage="Skipped"
+      extendedKeyUsage="Skipped"
       crl="Skipped"
       caValidation="Skipped"
       ocspStatus="Skipped"
@@ -377,13 +380,15 @@ while read host port
       echo -e "   Issuer: \033[1;33m$issuer\033[0m"
       echo -e "   Signature: \033[1;33m$signature\033[0m"
       echo -e "   Serial: \033[1;33m$serial\033[0m"
+      echo -e "   Key Usage: \033[1;33m$keyUsage\033[0m"
+      echo -e "   Extended Key Usage: \033[1;33m$extendedKeyUsage\033[0m"
       echo -e "   CRL: \033[1;33m$crl\033[0m"
       echo -e "   CA Chain Validation: \033[1;33m$caValidation\033[0m"
       echo -e "   OCSP Check: \033[1;33m$ocspStatus\033[0m"
       echo -e "   CRL Check: \033[1;33m$crlValidation\033[0m"
       echo -e "   Layer 7: \033[1;33m$layer7\033[0m"
       echo -e "---------------------------------------"
-      echo "$host,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
+      echo "$host,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
       continue
   fi
 
@@ -413,6 +418,8 @@ while read host port
       issuer="Skipped"
       signature="Skipped"
       serial="Skipped"
+      keyUsage="Skipped"
+      extendedKeyUsage="Skipped"
       crl="Skipped"
       caValidation="Skipped"
       ocspStatus="Skipped"
@@ -426,13 +433,15 @@ while read host port
       echo -e "   Issuer: \033[1;33m$issuer\033[0m"
       echo -e "   Signature: \033[1;33m$signature\033[0m"
       echo -e "   Serial: \033[1;33m$serial\033[0m"
+      echo -e "   Key Usage: \033[1;33m$keyUsage\033[0m"
+      echo -e "   Extended Key Usage: \033[1;33m$extendedKeyUsage\033[0m"
       echo -e "   CRL: \033[1;33m$crl\033[0m"
       echo -e "   CA Chain Validation: \033[1;33m$caValidation\033[0m"
       echo -e "   OCSP Check: \033[1;33m$ocspStatus\033[0m"
       echo -e "   CRL Check: \033[1;33m$crlValidation\033[0m"
       echo -e "   Layer 7: \033[1;33m$layer7\033[0m"
       echo -e "---------------------------------------"
-      echo "$host,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
+      echo "$host,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
       continue
     else
       echo -e "   CN: \033[1;32m$cn\033[0m"
@@ -648,6 +657,48 @@ while read host port
       echo -e "   Serial: \033[1;32m$serial\033[0m"
   fi
 
+  # Key Usage
+  if [ ! -z $SPEED ]
+    then
+      keyUsage=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -E -A1 "v3 Key Usage"
+    else
+      keyUsage=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "v3 Key Usage") < /dev/null 2>&1)
+  fi
+  if [[ "$keyUsage" =~ "Expecting: TRUSTED" ]];
+    then
+      keyUsage="Failed"
+      echo -e "   Key Usage: \033[1;31m$keyUsage\033[0m"
+    else
+      if [[ ! -z "$keyUsage" ]];
+        then
+          echo -e "   Key Usage: \033[1;32m$keyUsage\033[0m"
+        else
+          keyUsage="None"
+          echo -e "   Key Usage: \033[1;33m$keyUsage\033[0m"
+      fi
+  fi
+
+  # Extended Key Usage
+  if [ ! -z $SPEED ]
+    then
+      extendedKeyUsage=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -E -A1 "Extended Key Usage"
+    else
+      extendedKeyUsage=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "Extended Key Usage") < /dev/null 2>&1)
+  fi
+  if [[ "$extendedKeyUsage" =~ "Expecting: TRUSTED" ]];
+    then
+      extendedKeyUsage="Failed"
+      echo -e "   Extended Key Usage: \033[1;31m$extendedKeyUsage\033[0m"
+    else
+      if [[ ! -z "$extendedKeyUsage" ]];
+        then
+          echo -e "   Extended Key Usage: \033[1;32m$extendedKeyUsage\033[0m"
+        else
+          extendedKeyUsage="None"
+          echo -e "   Extended Key Usage: \033[1;33m$extendedKeyUsage\033[0m"
+      fi
+  fi
+
   # CRL
   if [ ! -z $SPEED ]
     then
@@ -790,7 +841,7 @@ while read host port
 
 echo -e "---------------------------------------"
 
-echo "$host,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
+echo "$host,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
 done < $INPUT
 
 # If Purge
