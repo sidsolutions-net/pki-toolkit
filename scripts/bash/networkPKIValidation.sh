@@ -662,7 +662,7 @@ while read host port
     then
       keyUsage=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -E -A1 "v3 Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/')
     else
-      keyUsage=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "v3 Key Usage") < /dev/null 2>&1)
+      keyUsage=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "v3 Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/') < /dev/null 2>&1)
   fi
   if [[ "$keyUsage" =~ "Expecting: TRUSTED" ]];
     then
@@ -671,6 +671,7 @@ while read host port
     else
       if [[ ! -z "$keyUsage" ]];
         then
+          keyUsage="$(echo "$keyUsage" | tr '\n' ',' | sed 's/^,//g' | sed 's/,[ \t]*/,/g' | sed 's/,/,\ /g' | sed 's/, $//' | sed 's/^ *//')"
           echo -e "   Key Usage: \033[1;32m$keyUsage\033[0m"
         else
           keyUsage="None"
@@ -683,7 +684,7 @@ while read host port
     then
       extendedKeyUsage=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -E -A1 "Extended Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/')
     else
-      extendedKeyUsage=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "Extended Key Usage") < /dev/null 2>&1)
+      extendedKeyUsage=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "Extended Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/') < /dev/null 2>&1)
   fi
   if [[ "$extendedKeyUsage" =~ "Expecting: TRUSTED" ]];
     then
@@ -692,6 +693,7 @@ while read host port
     else
       if [[ ! -z "$extendedKeyUsage" ]];
         then
+          extendedKeyUsage="$(echo "$extendedKeyUsage" | tr '\n' ',' | sed 's/^,//g' | sed 's/,[ \t]*/,/g' | sed 's/,/,\ /g' | sed 's/, $//' | sed 's/^ *//')"
           echo -e "   Extended Key Usage: \033[1;32m$extendedKeyUsage\033[0m"
         else
           extendedKeyUsage="None"
