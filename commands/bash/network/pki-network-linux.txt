@@ -1,8 +1,8 @@
 #################################################################
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
-#  Date       : 03/19/2019
-#  Version    : 1.0
+#  Date       : 05/03/2019
+#  Version    : 1.1
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
@@ -21,6 +21,8 @@
 # - issuer
 # - signature algorithm
 # - serial number
+# - Key & Extended Key Usage
+# - CRL
 # - thumbprint / fingerprint
 # - public key
 #
@@ -39,7 +41,7 @@
 #   attacks and firewalls. See the certificate & CA chain
 #   they see!
 #
-#   $Id: pki-network-linux.txt, v 1.0
+#   $Id: pki-network-linux.txt, v 1.1
 #################################################################
 
 # Initialize with test subject
@@ -96,6 +98,12 @@ echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:
 
 # Get the server certificate's serial number:
 echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -serial
+
+# Get the server certificate's Key Usage:
+echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "v3 Key Usage"
+
+# Get the server certificate's Extended Key Usage:
+echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "Extended Key Usage"
 
 # Get CRL
 echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -A 4 'X509v3 CRL Distribution Points' | grep "URI:" | sed 's/^.*URI:\(.*\)$/\1/'

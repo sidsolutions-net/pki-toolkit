@@ -23,6 +23,8 @@
 # - signature algorithm
 # - key pair match
 # - serial number
+# - Key & Extended Key Usage
+# - CRL
 # - thumbprint / fingerprint
 # - public key
 # - HTTP Pins
@@ -100,7 +102,16 @@ openssl x509 -in $testSubjet.pem -noout -text | grep 'Signature Algorithm'
 # Same but a single response:
 openssl x509 -in $testSubjet.pem -noout -text | grep 'Signature Algorithm' | uniq
 
-# Get the server certificate's serial number:
+# Get the certificate's Key Usage:
+openssl x509 -in $testSubjet.pem -noout -text | grep -E -A1 "v3 Key Usage"
+
+# Get the certificate's Extended Key Usage:
+openssl x509 -in $testSubjet.pem -noout -text | grep -E -A1 "Extended Key Usage"
+
+# Get the certificate's CRL:
+openssl x509 -in $testSubjet.pem -noout -text | grep -A 4 'X509v3 CRL Distribution Points' | grep "URI:" | sed 's/^.*URI:\(.*\)$/\1/'
+
+# Get the certificate's serial number:
 openssl x509 -in $testSubjet.pem -noout -serial
 
 # Check the key pair for a match
