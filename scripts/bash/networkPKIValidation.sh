@@ -625,7 +625,7 @@ while read host port
     then
       signature=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -m1 "Signature Algorithm: "| sed 's/^.*rithm:\ \(.*\)$/\1/')
     else
-      signature=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -m1 "Signature Algorithm: "| sed 's/^.*rithm:\ \(.*\)$/\1/') < /dev/null 2>&1)
+      signature=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -m1 "Signature Algorithm: " | sed 's/^.*rithm:\ \(.*\)$/\1/') < /dev/null 2>&1)
   fi
   if [[ "$signature" =~ "Expecting: TRUSTED" ]];
     then
@@ -660,7 +660,7 @@ while read host port
   # Key Usage
   if [ ! -z $SPEED ]
     then
-      keyUsage=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -E -A1 "v3 Key Usage")
+      keyUsage=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -E -A1 "v3 Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/')
     else
       keyUsage=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "v3 Key Usage") < /dev/null 2>&1)
   fi
@@ -681,7 +681,7 @@ while read host port
   # Extended Key Usage
   if [ ! -z $SPEED ]
     then
-      extendedKeyUsage=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -E -A1 "Extended Key Usage")
+      extendedKeyUsage=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -E -A1 "Extended Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/')
     else
       extendedKeyUsage=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "Extended Key Usage") < /dev/null 2>&1)
   fi
