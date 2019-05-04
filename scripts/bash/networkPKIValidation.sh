@@ -119,8 +119,8 @@ Usage: `basename $0` -h -v -l -e [integer] -C -O -c -7 -S -o [file] -p file
           - o: Output CSV of the results.
           - p: Purge temp directory contents on exit
   Parameters:
-      - file: Input CSV consiting of resolvable hostname and port
-              Example (example.com,443) REQUIRED
+      - file: Input CSV consiting of resolvable hostname, sni and port
+              Example (example.com,www.example.com,443) REQUIRED
 
     "
 }
