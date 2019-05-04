@@ -336,6 +336,8 @@ while read host port
           else
             echo -e "   Lookup: \033[1;32m$lookupTest\033[0m"
         fi
+      else
+        echo -e "   Lookup: \033[1;32m$lookupTest\033[0m"
     fi
     else
       lookupTest="Skipped"
@@ -678,6 +680,8 @@ while read host port
           echo -e "   Key Usage: \033[1;33m$keyUsage\033[0m"
       fi
   fi
+  ## Escape the commas for Excel
+  keyUsage=\"$keyUsage\"
 
   # Extended Key Usage
   if [ ! -z $SPEED ]
@@ -700,6 +704,8 @@ while read host port
           echo -e "   Extended Key Usage: \033[1;33m$extendedKeyUsage\033[0m"
       fi
   fi
+  ## Escape the commas for Excel
+  extendedKeyUsage=\"$extendedKeyUsage\"
 
   # CRL
   if [ ! -z $SPEED ]
