@@ -31,6 +31,7 @@
 #
 # Usage:
 # - Set test subject in an environment variable
+# - Set test SNI in an environment variable
 # - Set validation port in an environment variable
 #
 # Notes:
@@ -48,78 +49,82 @@
 ## Replace with correct value for your test case
 testSubject="example.com"
 
+# Initialize with test SNI
+## Replace with correct value for your test case
+testSNI="example.com"
+
 # Initialize with validation port
 ## Replace with correct value for your test case
 testPort="443"
 
 # Get the server certificate's begin and end dates:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -dates
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -dates
 
 # Get the server certificate's expiration date:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -enddate | cut -d '=' -f 2
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -enddate | cut -d '=' -f 2
 
 # Get the server certificate's subject:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -subject
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -subject
 
 # Same as above but showing Common Name:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -subject | sed 's/^.*CN=\(.*\)$/\1/'
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -subject | sed 's/^.*CN=\(.*\)$/\1/'
 
 # Get all the cerificate and the CA chain that is being sent and output their subject:
 ## Note: Went with the full BEGIN & END certificate label regex match for increased understanding
-echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 |\
+echo -e "Q\n" | openssl s_client -showcerts -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 |\
 awk 'BEGIN { x509 = "openssl x509 -noout -subject" }
     /-----BEGIN CERTIFICATE-----/ { a = "" }
     { a = a $0 RS }
     /-----END CERTIFICATE-----/ { print a | x509; close(x509) }'
 
 # Same as above but showing Common Name:
-echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 |\
+echo -e "Q\n" | openssl s_client -showcerts -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 |\
 awk 'BEGIN { x509 = "openssl x509 -noout -subject" }
     /-----BEGIN CERTIFICATE-----/ { a = "" }
     { a = a $0 RS }
     /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN=\(.*\)$/\1/'
 
 # Get the SAN(s) from the server certificate:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -i DNS | sed "s/^[ \t]*//"
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -i DNS | sed "s/^[ \t]*//"
 
 # Get the issuer of the server certificate:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -issuer
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -issuer
 
 # Same as above just show just the Common Name of the issuer:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -issuer | sed 's/^.*CN=\(.*\)$/\1/'
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -issuer | sed 's/^.*CN=\(.*\)$/\1/'
 
 # Get the signature algorithm of the server certificate:
 # Question: Why is the signature algorithm repeated in a certificate?
 # Answer:   https://tools.ietf.org/html/rfc6211
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep 'Signature Algorithm'
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep 'Signature Algorithm'
 
 # Same but a single response:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep 'Signature Algorithm' | uniq
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep 'Signature Algorithm' | uniq
 
 # Get the server certificate's serial number:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -serial
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -serial
 
 # Get the server certificate's Key Usage:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "v3 Key Usage"
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "v3 Key Usage"
 
 # Get the server certificate's Extended Key Usage:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "Extended Key Usage"
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "Extended Key Usage"
 
 # Get CRL
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -A 4 'X509v3 CRL Distribution Points' | grep "URI:" | sed 's/^.*URI:\(.*\)$/\1/'
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -A 4 'X509v3 CRL Distribution Points' | grep "URI:" | sed 's/^.*URI:\(.*\)$/\1/'
 
 # Get the server's certificate thumbprints / fingerprints:
 ## SHA1 - Microsoft's preference
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -fingerprint -sha1
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -fingerprint -sha1
 
 ## SHA256
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -fingerprint -sha256
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -fingerprint -sha256
 
 ## MD5
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -fingerprint -md5
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -fingerprint -md5
 
 # Get the server's certificate public key:
-echo -e "Q\n" | openssl s_client -servername $testSubject -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -fingerprint -pubkey
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -fingerprint -pubkey
 
 ## Miscellaneous Port connectivity test
 # Requires the bash shell

@@ -2,7 +2,7 @@
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
 #  Date       : 03/19/2019
-#  Version    : 1.0
+#  Version    : 1.1
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
@@ -29,6 +29,7 @@
 #
 # Usage:
 # - Set test subject in an environment variable
+# - Set test SNI in an environment variable
 # - Set validation port in an environment variable
 #
 # Notes:
@@ -53,61 +54,65 @@
 #   I've done because AWS Certificate Manager just took used
 #   the CN
 #
-#   $Id: pki-network-windows.txt, v 1.0
+#   $Id: pki-network-windows.txt, v 1.1
 #################################################################
 
 # Initialize with test subject
 ## Replace with correct value for your case
 SET testSubject="example.com"
 
+# Initialize with test subject
+## Replace with correct value for your case
+SET testSNI="example.com"
+
 # Initialize with validation port
 ## Replace with correct value for test case
 SET testPort="443"
 
 # Get the server certificate's begin and end dates
-openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -dates
+openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -dates
 
 # Get the server certificate's expiration date
 # Note: After hitting "enter", Type "Q" and enter again to get the command to return otherwise
 # you will have to wait until it times out. Ctl+C will end the connection but return nothing
-for /f "tokens=2 delims==" %i in ('openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2^>nul^| openssl x509 -noout -enddate') do @echo %i
+for /f "tokens=2 delims==" %i in ('openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2^>nul^| openssl x509 -noout -enddate') do @echo %i
 
 # Get the server certificate's subject
-openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -subject
+openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -subject
 
 # Same as above but showing Common NameInput
 # Note: After hitting "enter", Type "Q" and enter again to get the command to return otherwise
 # you will have to wait until it times out. Ctl+C will end the connection but return nothing
-for /f "tokens=3 delims==" %i in ('openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2^>nul^| openssl x509 -noout -subject') do @echo %i | for /f "tokens=1 delims=," %f in ('more') do @echo %f
+for /f "tokens=3 delims==" %i in ('openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2^>nul^| openssl x509 -noout -subject') do @echo %i | for /f "tokens=1 delims=," %f in ('more') do @echo %f
 
 # Get the SAN(s) from the server certificate
-openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -text | findstr DNS
+openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -text | findstr DNS
 
 # Get the issuer of the server certificate
-openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -issuer
+openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -issuer
 
 # Same as above just show just the Common Name of the issuer
 # Note: After hitting "enter", Type "Q" and enter again to get the command to return otherwise
 # you will have to wait until it times out. Ctl+C will end the connection but return nothing
-for /f "tokens=2 delims==" %i in ('openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2^>nul^| openssl x509 -noout -issuer') do @echo %i | for /f "tokens=1 delims=," %f in ('more') do @echo %f
+for /f "tokens=2 delims==" %i in ('openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2^>nul^| openssl x509 -noout -issuer') do @echo %i | for /f "tokens=1 delims=," %f in ('more') do @echo %f
 
 # Get the signature algorithm of the server certificate
 # Question: Why is the signature algorithm repeated in a certificate?
 # Answer:   https://tools.ietf.org/html/rfc6211
-openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -text | findstr /c:"Signature Algorithm"
+openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -text | findstr /c:"Signature Algorithm"
 
 # Get the server certificate's serial number:
- openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -serial
+ openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -serial
 
 # Get the server's certificate thumbprints / fingerprints:
 ## SHA1 - Microsoft's preference
-openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -sha1
+openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -sha1
 
 ## SHA256
-openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -sha256
+openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -sha256
 
 ## MD5
-openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -md5
+openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -md5
 
 # Get the server's certificate public key:
-openssl s_client -servername %testSubject% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -pubkey
+openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -fingerprint -pubkey
