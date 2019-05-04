@@ -39,9 +39,9 @@
 # Usage:
 # - Set date and timeout commands. See Notes
 # - Provide input parameter CSV file of valid FQDN hostnames
-#   and/or IP Addresses. Provide optional output file with -o
-#   option. CA Chain Validation and CRL Revocation check
-#   options
+#   and/or IP Addresses, SNI & Port. Provide optional output
+#   file with -o option. CA Chain Validation and CRL
+#   Revocation check options
 #
 # Tested Platforms:
 # - macOS Mojave 10.14.4 with OpenSSL 1.1.1b & curl 7.54.0
@@ -98,7 +98,7 @@
 #   $Id: networkPKIValidation.sh, v 1.0
 #################################################################
 # Set Version Number
-VERSION="1.0"
+VERSION="1.1"
 
 usage ()
 {
@@ -273,7 +273,7 @@ if [ -z $EXPIRY ]
 fi
 
 # Add the column labels to the output file
-echo "Host,Port,Lookup,Port Test,Common Name,LDAPv3 DN,Dates,End Date,Days To Expiration,CA Chain,SANs,Issuer,Signature Algorithm,Serial Number,Key Usage,Extended Key Usage,CRL Url,CA Chain Validation,OCSP Check,CRL Status,Layer 7 Check" >$OUTPUT
+echo "Host,SNI,Port,Lookup,Port Test,Common Name,LDAPv3 DN,Dates,End Date,Days To Expiration,CA Chain,SANs,Issuer,Signature Algorithm,Serial Number,Key Usage,Extended Key Usage,CRL Url,CA Chain Validation,OCSP Check,CRL Status,Layer 7 Check" >$OUTPUT
 
 # Initialize Internal Field Separator
 OLDIFS=$IFS
@@ -282,7 +282,7 @@ IFS=,
 # Line counter for input file errors
 line=0
 
-while read host port
+while read host sni port
   do
   # Increment here
   lineNo=$(($lineNo+1))
@@ -296,6 +296,12 @@ while read host port
   if [[ "$host" == *[@#$%'&'*=]* ]]
     then
       echo -e "\033[1;31mError: $host has special characters on line: \033[0m$lineNo\n"
+      exit 1
+  fi
+
+  if [[ "$sni" == *[@#$%'&'*=]* ]]
+    then
+      echo -e "\033[1;31mError: $sni has special characters on line: \033[0m$lineNo\n"
       exit 1
   fi
 
@@ -313,7 +319,7 @@ while read host port
 
   echo -e "$host"
   echo -e "---------------------------------------"
-
+  echo -e "   SNI: \033[1;32m$sni\033[0m"
   # NSLookup
   ## Try both forward and reverse because IPv6, User should validate input values
   ## and the port connection test is the deal/loop breaker
@@ -390,7 +396,7 @@ while read host port
       echo -e "   CRL Check: \033[1;33m$crlValidation\033[0m"
       echo -e "   Layer 7: \033[1;33m$layer7\033[0m"
       echo -e "---------------------------------------"
-      echo "$host,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
+      echo "$host,$sni,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
       continue
   fi
 
@@ -398,7 +404,7 @@ while read host port
   if [ ! -z $SPEED ]
     then
       ## Get all the certs
-      openssl s_client -showcerts -servername $host -connect $host:$port < /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="'"$tempDir/$host"'"a".pem"; print >out}'
+      openssl s_client -showcerts -servername $sni -connect $host:$port < /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="'"$tempDir/$host"'"a".pem"; print >out}'
       if [ -f $tempDir/${host}1.pem ]
         then
           cn=$(openssl x509 -noout -subject -in $tempDir/${host}1.pem |  grep -m1 "CN" | sed 's/.*CN\(.*\)$/\1/' | cut -d '=' -f 2 | sed 's/\,.*//' | sed 's/^ *//' | cut -d '/' -f 1)
@@ -406,7 +412,7 @@ while read host port
           cn="Expecting: TRUSTED"
       fi
     else
-      cn=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -subject | grep -m1 "CN" | sed 's/.*CN\(.*\)$/\1/' | cut -d '=' -f 2 | sed 's/\,.*//' | sed 's/^ *//' | cut -d '/' -f 1 )< /dev/null 2>&1)
+      cn=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -subject | grep -m1 "CN" | sed 's/.*CN\(.*\)$/\1/' | cut -d '=' -f 2 | sed 's/\,.*//' | sed 's/^ *//' | cut -d '/' -f 1 )< /dev/null 2>&1)
   fi
   if [[ "$cn" =~ "Expecting: TRUSTED" ]]
     then
@@ -443,7 +449,7 @@ while read host port
       echo -e "   CRL Check: \033[1;33m$crlValidation\033[0m"
       echo -e "   Layer 7: \033[1;33m$layer7\033[0m"
       echo -e "---------------------------------------"
-      echo "$host,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
+      echo "$host,$sni,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
       continue
     else
       echo -e "   CN: \033[1;32m$cn\033[0m"
@@ -457,7 +463,7 @@ while read host port
     then
       ldapDN=$(openssl x509 -noout -nameopt RFC2253 -subject -in $tempDir/${host}1.pem | sed 's/^.*subject*=\(.*\)$/\1/')
     else
-      ldapDN=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -nameopt RFC2253 -subject | sed 's/^.*subject*=\(.*\)$/\1/')< /dev/null 2>&1)
+      ldapDN=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -nameopt RFC2253 -subject | sed 's/^.*subject*=\(.*\)$/\1/')< /dev/null 2>&1)
   fi
   if [[ "$ldapDN" =~ "Expecting: TRUSTED" ]];
     then
@@ -478,7 +484,7 @@ while read host port
     then
       dates=$(openssl x509 -noout -dates -in $tempDir/${host}1.pem | cut -d '=' -f 2)
     else
-      dates=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -dates | cut -d '=' -f 2)< /dev/null 2>&1)
+      dates=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -dates | cut -d '=' -f 2)< /dev/null 2>&1)
   fi
   if [[ "$dates" =~ "Expecting: TRUSTED" ]];
     then
@@ -494,7 +500,7 @@ while read host port
     then
       endDate=$(openssl x509 -noout -enddate -in $tempDir/${host}1.pem | cut -d '=' -f 2)
     else
-      endDate=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -enddate | cut -d '=' -f 2)< /dev/null 2>&1)
+      endDate=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -enddate | cut -d '=' -f 2)< /dev/null 2>&1)
   fi
   if [[ "$endDate" =~ "Expecting: TRUSTED" ]];
     then
@@ -562,7 +568,7 @@ while read host port
           caCount=$(($caCount+1))
       done
     else
-      caChain=$((echo -e "Q\n" | openssl s_client -showcerts -servername $host -connect $host:$port < /dev/null 2>&1 | awk 'BEGIN { x509 = "openssl x509 -noout -subject" } /-----BEGIN CERTIFICATE-----/ { a = "" } { a = a $0 RS } /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/^ *//')< /dev/null 2>&1)
+      caChain=$((echo -e "Q\n" | openssl s_client -showcerts -servername $sni -connect $host:$port < /dev/null 2>&1 | awk 'BEGIN { x509 = "openssl x509 -noout -subject" } /-----BEGIN CERTIFICATE-----/ { a = "" } { a = a $0 RS } /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/^ *//')< /dev/null 2>&1)
   fi
   if [[ "$caChain" =~ "Expecting: TRUSTED" ]];
     then
@@ -590,7 +596,7 @@ while read host port
     then
       san=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -i DNS | sed 's/^[\t ]*//')
     else
-      san=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -i DNS | sed 's/^[\t ]*//')< /dev/null 2>&1)
+      san=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -i DNS | sed 's/^[\t ]*//')< /dev/null 2>&1)
   fi
   if [[ "$san" =~ "Expecting: TRUSTED" ]];
     then
@@ -612,7 +618,7 @@ while read host port
     then
       issuer=$(openssl x509 -noout -issuer -in $tempDir/${host}1.pem | sed 's/^.*CN.*=\(.*\)$/\1/' | sed 's/^ *//')
     else
-      issuer=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -issuer | sed 's/^.*CN.*=\(.*\)$/\1/')< /dev/null 2>&1)
+      issuer=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -issuer | sed 's/^.*CN.*=\(.*\)$/\1/')< /dev/null 2>&1)
   fi
   if [[ "$issuer" =~ "Expecting: TRUSTED" ]];
     then
@@ -627,7 +633,7 @@ while read host port
     then
       signature=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -m1 "Signature Algorithm: "| sed 's/^.*rithm:\ \(.*\)$/\1/')
     else
-      signature=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -m1 "Signature Algorithm: " | sed 's/^.*rithm:\ \(.*\)$/\1/') < /dev/null 2>&1)
+      signature=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -m1 "Signature Algorithm: " | sed 's/^.*rithm:\ \(.*\)$/\1/') < /dev/null 2>&1)
   fi
   if [[ "$signature" =~ "Expecting: TRUSTED" ]];
     then
@@ -649,7 +655,7 @@ while read host port
     then
       serial=$(openssl x509 -noout -serial -in $tempDir/${host}1.pem | cut -d '=' -f 2)
     else
-      serial=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -serial | cut -d '=' -f 2)< /dev/null 2>&1)
+      serial=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -serial | cut -d '=' -f 2)< /dev/null 2>&1)
   fi
   if [[ "$serial" =~ "Expecting: TRUSTED" ]];
     then
@@ -664,7 +670,7 @@ while read host port
     then
       keyUsage=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -E -A1 "v3 Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/')
     else
-      keyUsage=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "v3 Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/') < /dev/null 2>&1)
+      keyUsage=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "v3 Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/') < /dev/null 2>&1)
   fi
   if [[ "$keyUsage" =~ "Expecting: TRUSTED" ]];
     then
@@ -688,7 +694,7 @@ while read host port
     then
       extendedKeyUsage=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -E -A1 "Extended Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/')
     else
-      extendedKeyUsage=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "Extended Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/') < /dev/null 2>&1)
+      extendedKeyUsage=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "Extended Key Usage" | sed 's/^.*Usage:\ \(.*\)$/\1/') < /dev/null 2>&1)
   fi
   if [[ "$extendedKeyUsage" =~ "Expecting: TRUSTED" ]];
     then
@@ -712,7 +718,7 @@ while read host port
     then
       crl=$(openssl x509 -noout -text -in $tempDir/${host}1.pem | grep -A 4 'X509v3 CRL Distribution Points' | grep -m1 "URI:" | sed 's/^.*URI:\(.*\)$/\1/')
     else
-      crl=$((echo -e "Q\n" | openssl s_client -servername $host -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -A 4 'X509v3 CRL Distribution Points' | grep -m1 "URI:" | sed 's/^.*URI:\(.*\)$/\1/')< /dev/null 2>&1)
+      crl=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | openssl x509 -noout -text | grep -A 4 'X509v3 CRL Distribution Points' | grep -m1 "URI:" | sed 's/^.*URI:\(.*\)$/\1/')< /dev/null 2>&1)
   fi
   if [[ "$serial" =~ "Expecting: TRUSTED" ]];
     then
@@ -728,7 +734,7 @@ while read host port
       if [ -z $SPEED ]
         then
           ## Get all the certs
-          openssl s_client -showcerts -servername $host -connect $host:$port < /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="'"$tempDir/$host"'"a".pem"; print >out}'
+          openssl s_client -showcerts -servername $sni -connect $host:$port < /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="'"$tempDir/$host"'"a".pem"; print >out}'
       fi
       certCount=$(ls $tempDir | grep "$host[1-9].pem" -c)
       rootCA=${host}${certCount}.pem
@@ -770,7 +776,7 @@ while read host port
       # Get OCSP URI
       if [ -z $SPEED ]
         then
-          openssl s_client -showcerts -servername $host -connect $host:$port < /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="'"$tempDir/$host"'"a".pem"; print >out}'
+          openssl s_client -showcerts -servername $sni -connect $host:$port < /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="'"$tempDir/$host"'"a".pem"; print >out}'
       fi
       ocspURI=$((openssl x509 -noout -ocsp_uri -in $tempDir/${host}1.pem)< /dev/null 2>&1)
       if [ ! -z "$ocspURI" ]
@@ -849,7 +855,7 @@ while read host port
 
 echo -e "---------------------------------------"
 
-echo "$host,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
+echo "$host,$sni,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
 done < $INPUT
 
 # If Purge
