@@ -3,8 +3,8 @@
 ################################################################
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
-#  Date       : 03/25/2019
-#  Version    : 1.1
+#  Date       : 05/06/2019
+#  Version    : 1.2
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
@@ -69,6 +69,15 @@
 #
 # Fixes & Enhancements:
 #
+# - 1.2
+#   - Added TLS Client Certificate Authentication detection
+#   - Client Certificate Types
+#   - Requested Signature Algorithm
+#   - Acceptable Client Certificate CA Names
+# - 1.1
+#   - Added Key Usage and Extended Key Usage
+#   - Added SNI CSV input
+#   - Fixed Lookup output
 # - 1.0
 #   - Added OCSP validation but requires OpenSSL 1.1+ due
 #     to most respondors requiring a valid HEAD HTTP
@@ -95,10 +104,10 @@
 #   - Added curl Layer 7 Head Check
 #   - Better error handling and error feedback
 #
-#   $Id: networkPKIValidation.sh, v 1.0
+#   $Id: networkPKIValidation.sh, v 1.2
 #################################################################
 # Set Version Number
-VERSION="1.1"
+VERSION="1.2"
 
 usage ()
 {
@@ -273,7 +282,7 @@ if [ -z $EXPIRY ]
 fi
 
 # Add the column labels to the output file
-echo "Host,SNI,Port,Lookup,Port Test,Common Name,LDAPv3 DN,Dates,End Date,Days To Expiration,CA Chain,SANs,Issuer,Signature Algorithm,Serial Number,Key Usage,Extended Key Usage,CRL Url,CA Chain Validation,OCSP Check,CRL Status,Layer 7 Check" >$OUTPUT
+echo "Host,SNI,Port,Lookup,Port Test,Common Name,LDAPv3 DN,Dates,End Date,Days To Expiration,CA Chain,SANs,Issuer,Signature Algorithm,Serial Number,Key Usage,Extended Key Usage,CRL Url,CA Chain Validation,TLS Client Authentication,Client Certificate Types,Requested Signature Algorithms,Acceptable Client Certificate CA Names,OCSP Check,CRL Status,Layer 7 Check" >$OUTPUT
 
 # Initialize Internal Field Separator
 OLDIFS=$IFS
@@ -375,6 +384,10 @@ while read host sni port
       extendedKeyUsage="Skipped"
       crl="Skipped"
       caValidation="Skipped"
+      tlsClientValidation="Skipped"
+      clientCertificateTypes="Skipped"
+      requestedSignatures="Skipped"
+      acceptableCAs="Skipped"
       ocspStatus="Skipped"
       crlValidation="Skipped"
       layer7="Skipped"
@@ -392,11 +405,15 @@ while read host sni port
       echo -e "   Extended Key Usage: \033[1;33m$extendedKeyUsage\033[0m"
       echo -e "   CRL: \033[1;33m$crl\033[0m"
       echo -e "   CA Chain Validation: \033[1;33m$caValidation\033[0m"
+      echo -e "   TLS Client Authentication Validation: \033[1;33m$tlsClientValidation\033[0m"
+      echo -e "   Client Certificate Types: \033[1;33m$clientCertificateTypes\033[0m"
+      echo -e "   Requested Signature Algorithms: \033[1;33m$requestedSignatures\033[0m"
+      echo -e "   Acceptable Client Certificate CA Names: \033[1;33m$acceptableCAs\033[0m"
       echo -e "   OCSP Check: \033[1;33m$ocspStatus\033[0m"
       echo -e "   CRL Check: \033[1;33m$crlValidation\033[0m"
       echo -e "   Layer 7: \033[1;33m$layer7\033[0m"
       echo -e "---------------------------------------"
-      echo "$host,$sni,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
+      echo "$host,$sni,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$tlsClientValidation,$clientCertificateTypes,$requestedSignatures,$acceptableCAs,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
       continue
   fi
 
@@ -430,6 +447,10 @@ while read host sni port
       extendedKeyUsage="Skipped"
       crl="Skipped"
       caValidation="Skipped"
+      tlsClientValidation="Skipped"
+      clientCertificateTypes="Skipped"
+      requestedSignatures="Skipped"
+      acceptableCAs="Skipped"
       ocspStatus="Skipped"
       crlValidation="Skipped"
       layer7="Skipped"
@@ -445,11 +466,15 @@ while read host sni port
       echo -e "   Extended Key Usage: \033[1;33m$extendedKeyUsage\033[0m"
       echo -e "   CRL: \033[1;33m$crl\033[0m"
       echo -e "   CA Chain Validation: \033[1;33m$caValidation\033[0m"
+      echo -e "   TLS Client Authentication Validation: \033[1;33m$tlsClientValidation\033[0m"
+      echo -e "   Client Certificate Types: \033[1;33m$clientCertificateTypes\033[0m"
+      echo -e "   Requested Signature Algorithms: \033[1;33m$requestedSignatures\033[0m"
+      echo -e "   Acceptable Client Certificate CA Names: \033[1;33m$acceptableCAs\033[0m"
       echo -e "   OCSP Check: \033[1;33m$ocspStatus\033[0m"
       echo -e "   CRL Check: \033[1;33m$crlValidation\033[0m"
       echo -e "   Layer 7: \033[1;33m$layer7\033[0m"
       echo -e "---------------------------------------"
-      echo "$host,$sni,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
+      echo "$host,$sni,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$tlsClientValidation,$ clientCertificateTypes,$requestedSignatures,$acceptableCAs,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
       continue
     else
       echo -e "   CN: \033[1;32m$cn\033[0m"
@@ -608,7 +633,7 @@ while read host sni port
       # No real CSV spec, see https://www.csvreader.com/csv_format.php
       # Uncomment and Comment or experiment as needed
       ## Escape the commas for Linux
-      ## ldapDN=\\"$san\\"
+      ## san=\\"$san\\"
       ## Escape the commas for Excel
       san=\"$san\"
   fi
@@ -686,6 +711,10 @@ while read host sni port
           echo -e "   Key Usage: \033[1;33m$keyUsage\033[0m"
       fi
   fi
+  # No real CSV spec, see https://www.csvreader.com/csv_format.php
+  # Uncomment and Comment or experiment as needed
+  ## Escape the commas for Linux
+  ## keyUsage=\\"$keyUsage\\"
   ## Escape the commas for Excel
   keyUsage=\"$keyUsage\"
 
@@ -710,6 +739,10 @@ while read host sni port
           echo -e "   Extended Key Usage: \033[1;33m$extendedKeyUsage\033[0m"
       fi
   fi
+  # No real CSV spec, see https://www.csvreader.com/csv_format.php
+  # Uncomment and Comment or experiment as needed
+  ## Escape the commas for Linux
+  ## extendedKeyUsage=\\"$extendedKeyUsage\\"
   ## Escape the commas for Excel
   extendedKeyUsage=\"$extendedKeyUsage\"
 
@@ -768,6 +801,35 @@ while read host sni port
     else
       caValidation="Skipped"
       echo -e "   CA Chain Validation: \033[1;33m$caValidation\033[0m"
+  fi
+  # TLS Client Validation
+  clientCertificateTypes=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | grep -m1 "Client Certificate Types:" | sed 's/^.*Types: \(.*\)$/\1/')< /dev/null 2>&1)
+
+  if [[ -z $clientCertificateTypes ]]
+    then
+      tlsClientValidation="None"
+      echo -e "   TLS Client Validation: \033[1;32m$tlsClientValidation\033[0m"
+      clientCertificateTypes="N/A"
+      echo -e "   Client Certificate Types: \033[1;32m$clientCertificateTypes\033[0m"
+      requestedSignatures="N/A"
+      echo -e "   Requested Signature Algorithms: \033[1;32m$tlsClientValidation\033[0m"
+      acceptableCAs="N/A"
+      echo -e "   Acceptable Client Certificate CA Names: \033[1;32m$acceptableCAs\033[0m"
+    else
+      tlsClientValidation="Yes"
+      echo -e "   TLS Client Validation: \033[1;32m$tlsClientValidation\033[0m"
+      echo -e "   Client Certificate Types: \033[1;32m$clientCertificateTypes\033[0m"
+      requestedSignatures=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | grep -m1 "Requested Signature Algorithms:"| sed 's/^.*rithms: \(.*\)$/\1/')< /dev/null 2>&1)
+      echo -e "   Requested Signature Algorithms: \033[1;32m$requestedSignatures\033[0m"
+      acceptableCAs=$((echo -e "Q\n" | openssl s_client -servername $sni -connect $host:$port < /dev/null 2>&1 | awk 'BEGIN { cn = "grep CN" } /Acceptable client certificate/ { a = "" } { a = a $0 RS } /Client Certificate Types/ { print a | cn; close(cn) }'|sed 's/.*CN\(.*\)$/\1/'|cut -d '=' -f 2 | sed 's/\,.*//' | sed 's/^ *//' | cut -d '/' -f 1 | tr '\n' ','| sed 's/,/,\ /g'| sed 's/, $//')< /dev/null 2>&1)
+      echo -e "   Acceptable Client Certificate CA Names: \033[1;32m$acceptableCAs\033[0m"
+      # No real CSV spec, see https://www.csvreader.com/csv_format.php
+      # Uncomment and Comment or experiment as needed
+      ## Escape the commas for Linux
+      ## acceptableCAs=\\"$acceptableCAs\\"
+      ## Escape the commas for Excel
+      clientCertificateTypes=\"$clientCertificateTypes\"
+      acceptableCAs=\"$acceptableCAs\"
   fi
 
   # OCSP Check
@@ -855,7 +917,7 @@ while read host sni port
 
 echo -e "---------------------------------------"
 
-echo "$host,$sni,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
+echo "$host,$sni,$port,$lookupTest,$portTest,$cn,$ldapDN,$dates,$endDate,$daysToExpiry,$caChain,$san,$issuer,$signature,$serial,$keyUsage,$extendedKeyUsage,$crl,$caValidation,$tlsClientValidation,$clientCertificateTypes,$requestedSignatures,$acceptableCAs,$ocspStatus,$crlValidation,$layer7">>$OUTPUT
 done < $INPUT
 
 # If Purge

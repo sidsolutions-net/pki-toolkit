@@ -2,7 +2,7 @@
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
 #  Date       : 05/03/2019
-#  Version    : 1.1
+#  Version    : 1.2
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
@@ -23,6 +23,9 @@
 # - serial number
 # - Key & Extended Key Usage
 # - CRL
+# - Client Certificate Types
+# - Requested Signature Algorithms
+# - Acceptable Client Certificate CA Names
 # - thumbprint / fingerprint
 # - public key
 #
@@ -42,7 +45,7 @@
 #   attacks and firewalls. See the certificate & CA chain
 #   they see!
 #
-#   $Id: pki-network-linux.txt, v 1.1
+#   $Id: pki-network-linux.txt, v 1.2
 #################################################################
 
 # Initialize with test subject
@@ -112,6 +115,15 @@ echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$tes
 
 # Get CRL
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -A 4 'X509v3 CRL Distribution Points' | grep "URI:" | sed 's/^.*URI:\(.*\)$/\1/'
+
+# Client Certificate Types:
+openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | grep -m1 "Client Certificate Types:"
+
+# Requested Signature Algorithms
+openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | grep -m1 "Requested Signature Algorithms:"
+
+# Acceptable Client Certificate CA Name:
+openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 |awk 'BEGIN { cn = "grep CN" } /Acceptable client certificate/ { a = "" } { a = a $0 RS } /Client Certificate Types/ { print a | cn; close(cn) }'|sed 's/.*CN\(.*\)$/\1/'|cut -d '=' -f 2 | sed 's/\,.*//' | sed 's/^ *//' | cut -d '/' -f 1
 
 # Get the server's certificate thumbprints / fingerprints:
 ## SHA1 - Microsoft's preference
