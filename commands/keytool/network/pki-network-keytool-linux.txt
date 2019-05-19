@@ -1,30 +1,29 @@
 #################################################################
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
-#  Date       : 04/01/2019
-#  Version    : 1.0
+#  Date       : 05/19/2019
+#  Version    : 1.3
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
 #  Description:
-# - Keytool Linux PKI file commands
+# - Keytool Linux PKI network commands
 #################################################################
 # Purpose:
-# - provide file commands for certificate troubleshooting
+# - provide network commands for certificate troubleshooting
 #   and pre & post validation of certificate deployment
 #
 # Requirements:
-# - CSR generation
 # - dates
 # - subject / CN
 # - CA chain
 # - SANs entries
 # - issuer
+# - subject public key info
 # - signature algorithm
-# - key pair match
 # - serial number
-# - thumbprint / fingerprint
-# - public key
+# - Key & Extended Key Usage
+# - CRL
 #
 # Method:
 # - keytool with standard shell commands
@@ -38,9 +37,67 @@
 # Notes:
 # - Works! Great for both employee & client education.
 #
-#   $Id: pki-network-keytool-linux.txt, v 1.0
+#   $Id: pki-network-keytool-linux.txt, v 1.3
 #################################################################
 
-## Windows Commands
+## Linux Commands
 # Set your keytool path. Allows for testing with multiple
 # version of Java
+myKeytool="/path/to/keytool"
+
+# Initialize with test subject
+## Replace with correct value for your test case
+testSubject="example.com"
+
+# Initialize with validation port
+## Replace with correct value for your test case
+testPort="443"
+
+# Get the server certificate's begin and end dates:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Valid
+
+# Get the server certificate's expiration date:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Valid | sed 's/^.*until: \(.*\)$/\1/'
+
+# Get the server certificate's subject:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/'
+
+# Same as above but showing Common Name:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Owner | sed 's/^.*CN=\(.*\)/\1/'| cut -d ',' -f 1
+
+# Get all the cerificate and the CA chain that is being sent and output their subject:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #/, /#1: ObjectId:/ { a = a $0 RS} { print a; a=""}' |awk 'NR==1,/Certificate #1/{sub(/(.*)/, "")}'1| grep Owner | sed 's/^.*CN=\(.*,\)/\1/'| cut -d ',' -f 1
+
+# Get the SAN(s) from the server certificate:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep DNSName | sed 's/^[\t ]*//'
+
+# Get the issuer of the server certificate:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Issuer:
+
+# Same as above just show just the Common Name of the issuer:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Issuer: | sed 's/^.*CN=\(.*\)/\1/'| cut -d ',' -f 1
+
+# Get subject public key algorithm:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  |  grep "Subject Public Key Algorithm:"
+
+# Get the signature algorithm of the server certificate:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep "Signature algorithm name:"
+
+# Get the server certificate's serial number:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep "Serial number:"
+
+# Get the server certificate's key usage:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/KeyUsage /,/]/{print $0}'
+
+# Get the server certificate's extended key usage:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/ExtendedKeyUsage/,/]/{print $0}'
+
+# Get CRL
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep "\[URIName:" | sed 's/^[\t ]*//'
+
+# Get the server's certificate thumbprints / fingerprints:
+## SHA1 - Microsoft's preference
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA1:" |  xargs
+
+## SHA256
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA256:" |  xargs

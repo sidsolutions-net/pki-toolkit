@@ -1,8 +1,8 @@
 #################################################################
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
-#  Date       : 05/03/2019
-#  Version    : 1.2
+#  Date       : 05/19/2019
+#  Version    : 1.3
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
@@ -19,6 +19,7 @@
 # - CA chain
 # - SANs entries
 # - issuer
+# - subject public key info
 # - signature algorithm
 # - serial number
 # - Key & Extended Key Usage
@@ -45,7 +46,7 @@
 #   attacks and firewalls. See the certificate & CA chain
 #   they see!
 #
-#   $Id: pki-network-linux.txt, v 1.2
+#   $Id: pki-network-linux.txt, v 1.3
 #################################################################
 
 # Initialize with test subject
@@ -96,6 +97,9 @@ echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$tes
 # Same as above just show just the Common Name of the issuer:
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -issuer | sed 's/^.*CN=\(.*\)$/\1/'
 
+# Get subject public key info:
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | awk '/Subject Public Key Info:/,/X509/{print $0}' | grep -v "Subject Public Key Info:" | grep Key | tr '\n' ',' | xargs | sed 's/,$//'
+
 # Get the signature algorithm of the server certificate:
 # Question: Why is the signature algorithm repeated in a certificate?
 # Answer:   https://tools.ietf.org/html/rfc6211
@@ -107,10 +111,10 @@ echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$tes
 # Get the server certificate's serial number:
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -serial
 
-# Get the server certificate's Key Usage:
+# Get the server certificate's key usage:
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "v3 Key Usage"
 
-# Get the server certificate's Extended Key Usage:
+# Get the server certificate's extended key usage:
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -E -A1 "Extended Key Usage"
 
 # Get CRL
@@ -138,7 +142,7 @@ echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$tes
 # Get the server's certificate public key:
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -fingerprint -pubkey
 
-## Miscellaneous Port connectivity test
+## Miscellaneous Port connectivity tests
 # Requires the bash shell
 (echo >/dev/tcp/$testSubject/$testPort) &>/dev/null && echo "Open $testPort" || echo "Close $testPort"
 
