@@ -97,6 +97,9 @@ openssl x509 -in $testSubject.pem -noout -issuer
 # Same as above just show just the Common Name of the issuer:
 openssl x509 -in $testSubject.pem -noout -issuer | sed 's/^.*CN=\(.*\)$/\1/'
 
+# Get subject public key info:
+openssl x509 -in $testSubject.pem -noout -text | awk '/Subject Public Key Info:/,/X509/{print $0}' | grep -v "Subject Public Key Info:" | grep Key | tr '\n' ',' | xargs | sed 's/,$//'
+
 # Get the signature algorithm of the server certificate:
 # Question: Why is the signature algorithm repeated in a certificate?
 # Answer:   https://tools.ietf.org/html/rfc6211
@@ -104,6 +107,9 @@ openssl x509 -in $testSubject.pem -noout -text | grep 'Signature Algorithm'
 
 # Same but a single response:
 openssl x509 -in $testSubject.pem -noout -text | grep 'Signature Algorithm' | uniq
+
+# Get the certificate's serial number:
+openssl x509 -in $testSubject.pem -noout -serial
 
 # Get the certificate's Key Usage:
 openssl x509 -in $testSubject.pem -noout -text | grep -E -A1 "v3 Key Usage"
@@ -113,9 +119,6 @@ openssl x509 -in $testSubject.pem -noout -text | grep -E -A1 "Extended Key Usage
 
 # Get the certificate's CRL:
 openssl x509 -in $testSubject.pem -noout -text | grep -A 4 'X509v3 CRL Distribution Points' | grep "URI:" | sed 's/^.*URI:\(.*\)$/\1/'
-
-# Get the certificate's serial number:
-openssl x509 -in $testSubject.pem -noout -serial
 
 # Check the key pair for a match
 openssl x509 -in $testSubject.pem -noout -modulus | openssl md5

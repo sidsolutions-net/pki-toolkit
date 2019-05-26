@@ -92,3 +92,17 @@ $myKeytool -printcert -v -file $testSubject.pem | grep Issuer:
 
 # Same as above just show just the Common Name of the issuer:
 $myKeytool -printcert -v -file $testSubject.pem | grep Issuer: | sed 's/^.*CN=\(.*\)/\1/'| cut -d ',' -f 1
+
+# Get subject public key info:
+$myKeytool -printcert -v -file $testSubject.pem | grep "Subject Public Key Algorithm:"
+
+# Get the signature algorithm of the server certificate:
+# Question: Why is the signature algorithm repeated in a certificate?
+# Answer:   https://tools.ietf.org/html/rfc6211
+$myKeytool -printcert -v -file $testSubject.pem | grep "Signature algorithm name:"
+
+# Get the certificate's serial number:
+$myKeytool -printcert -v -file $testSubject.pem | grep "Serial number:"
+
+# Get the certificate's Key Usage:
+$myKeytool -printcert -v -file $testSubject.pem | awk '/KeyUsage /,/]/{print $0}'
