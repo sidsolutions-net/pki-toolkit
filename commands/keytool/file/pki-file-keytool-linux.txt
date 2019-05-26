@@ -44,3 +44,51 @@
 ## Windows Commands
 # Set your keytool path. Allows for testing with multiple
 # version of Java
+myKeytool="/path/to/keytool"
+
+# Initialize with test subject
+## Replace with correct value for your test case
+testSubject="example.com"
+
+# Generate a new keystore which requires CSR and private key generation
+$myKeytool -genkey -alias $testSubject -keyalg RSA -keysize 2048 -keystore keystore.jks -dname "CN=example.com, O=SID Solutions, OU=Resume Department, L=Fort Walton Beach, ST=Florida, C=US" -storepass password -keypass password
+
+# Generate a CSR
+$myKeytool -certreq -alias $testSubject -keystore keystore.jks -file $testSubject.csr
+
+# Validate your CSR
+## Subject
+$myKeytool -printcertreq -file $testSubject.csr | grep "Subject:"
+
+## Public Key Info
+$myKeytool -printcertreq -file $testSubject.csr | grep "Public Key:"
+
+## Signature algorithm
+$myKeytool -printcertreq -file $testSubject.csr | grep "Signature algorithm:"
+
+# Get the server certificate's begin and end dates:
+$myKeytool -printcert -v -file $testSubject.pem | grep Valid
+
+# Get the server certificate's expiration date:
+$myKeytool -printcert -v -file $testSubject.pem | grep Valid | sed 's/^.*until: \(.*\)$/\1/'
+
+# Get the server certificate's subject:
+$myKeytool -printcert -v -file $testSubject.pem | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/'
+
+# Same as above but showing Common Name:
+$myKeytool -printcert -v -file $testSubject.pem | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1
+
+# Get all the cerificate and the CA chain that is being sent, split into separate files and renamed to their subject
+# replacing spaces & commans with underscores:
+# Note: Broke it down to 2 commands for better readability
+$myKeytool -printcert -sslserver extservices3.intg.apptoapp.org:443 -rfc | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+for cert in cert*.pem; do newname=$($myKeytool -printcert -v -file $cert | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; done
+
+Get the SAN(s) from the server certificate:
+$myKeytool -printcert -v -file $testSubject.pem | grep DNSName | sed 's/^[\t ]*//'
+
+# Get the issuer of the server certificate:
+$myKeytool -printcert -v -file $testSubject.pem | grep Issuer:
+
+# Same as above just show just the Common Name of the issuer:
+$myKeytool -printcert -v -file $testSubject.pem | grep Issuer: | sed 's/^.*CN=\(.*\)/\1/'| cut -d ',' -f 1

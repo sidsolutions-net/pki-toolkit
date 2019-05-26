@@ -63,7 +63,7 @@ $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,
 $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/'
 
 # Same as above but showing Common Name:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Owner | sed 's/^.*CN=\(.*\)/\1/'| cut -d ',' -f 1
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Owner | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1
 
 # Get all the cerificate and the CA chain that is being sent and output their subject:
 $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #/, /#1: ObjectId:/ { a = a $0 RS} { print a; a=""}' |awk 'NR==1,/Certificate #1/{sub(/(.*)/, "")}'1| grep Owner | sed 's/^.*CN=\(.*,\)/\1/'| cut -d ',' -f 1
