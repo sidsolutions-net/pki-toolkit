@@ -53,8 +53,11 @@ testSubject="example.com"
 # Generate a new keystore which requires CSR and private key generation
 $myKeytool -genkey -alias $testSubject -keyalg RSA -keysize 2048 -keystore keystore.jks -dname "CN=example.com, O=SID Solutions, OU=Resume Department, L=Fort Walton Beach, ST=Florida, C=US" -storepass password -keypass password
 
-# Generate a CSR
+# Generate a CSR for existing keystore
 $myKeytool -certreq -alias $testSubject -keystore keystore.jks -file $testSubject.csr
+
+# Generate new keystore and self signed certificate
+$myKeytool -genkey -alias $testSubject -keyalg RSA -keysize 2048 -validity 360 -keystore selfsigned-keystore.jks -dname "CN=example.com, O=SID Solutions, OU=Resume Department, L=Fort Walton Beach, ST=Florida, C=US" -storepass password -keypass password
 
 # Validate your CSR
 ## Subject
@@ -106,3 +109,35 @@ $myKeytool -printcert -v -file $testSubject.pem | grep "Serial number:"
 
 # Get the certificate's Key Usage:
 $myKeytool -printcert -v -file $testSubject.pem | awk '/KeyUsage /,/]/{print $0}'
+
+# Get the certificate's Extended Key Usage:
+$myKeytool -printcert -v -file $testSubject.pem | awk '/ExtendedKeyUsage/,/]/{print $0}'
+
+# Get the certificate's CRL:
+$myKeytool -printcert -v -file $testSubject.pem | grep "\[URIName:" | sed 's/^[\t ]*//'
+
+# Get the server's certificate thumbprints / fingerprints:
+## SHA1 - Microsoft's preference
+$myKeytool -printcert -v -file $testSubject.pem | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA1:" |  xargs
+
+## SHA256
+$myKeytool -printcert -v -file $testSubject.pem | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA256:" |  xargs
+
+# Keystore commands
+## Get certificate(s) subject:
+$myKeytool -list -v -keystore keystore.jks -storepass password | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/'
+
+## Same as above but just Common Name:
+$myKeytool -list -v -keystore keystore.jks -storepass password | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1
+
+## Get certificate(s) aliases:
+$myKeytool -list -v -keystore keystore.jks -storepass password | grep "Alias name:" |  sed 's/^.*Alias name: \(.*\)$/\1/'
+
+## Delete certificate from keystore
+$myKeytool -delete -alias $testSubject -keystore keystore.jks -storepass password
+
+## Export certificate from keystore
+$myKeytool -export -alias $testSubject -keystore keystore.jks -storepass password
+
+## Change keystore password
+$myKeytool -storepasswd -new new_password -keystore keystore.jks -storepass password
