@@ -63,7 +63,7 @@ $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,
 $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/'
 
 # Same as above but showing Common Name:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Owner | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Owner | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1
 
 # Get all the cerificate and the CA chain that is being sent and output their subject:
 $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #/, /#1: ObjectId:/ { a = a $0 RS} { print a; a=""}' |awk 'NR==1,/Certificate #1/{sub(/(.*)/, "")}'1| grep Owner | sed 's/^.*CN=\(.*,\)/\1/'| cut -d ',' -f 1
@@ -75,7 +75,7 @@ $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,
 $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Issuer:
 
 # Same as above just show just the Common Name of the issuer:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Issuer: | sed 's/^.*CN=\(.*\)/\1/'| cut -d ',' -f 1
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Issuer: | sed 's/^.*CN *= *\(.*\)/\1/'| cut -d ',' -f 1
 
 # Get subject public key algorithm:
 $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  |  grep "Subject Public Key Algorithm:"
@@ -105,4 +105,4 @@ $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,
 # Get CA chain from remote server and import to trust store:
 # Note: Broke it down to 2 commands for better readability
 $myKeytool -printcert -sslserver $testSubject:$testPort -rfc | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
-for cert in cert*.pem; do if [ $cert != cert1.pem ]; then newname=$($myKeytool -printcert -v -file $cert | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; caName=$(echo $newname | sed s/.pem//); $myKeytool -import -trustcacerts -file $newname -alias $caName -keystore cacerts.jks -storepass password; fi; done
+for cert in cert*.pem; do if [ $cert != cert1.pem ]; then newname=$($myKeytool -printcert -v -file $cert | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; caName=$(echo $newname | sed s/.pem//); $myKeytool -import -trustcacerts -file $newname -alias $caName -keystore cacerts.jks -storepass password; fi; done

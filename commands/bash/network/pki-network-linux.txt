@@ -1,7 +1,7 @@
 #################################################################
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
-#  Date       : 05/19/2019
+#  Date       : 05/26/2019
 #  Version    : 1.3
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
@@ -71,7 +71,7 @@ echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$tes
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -subject
 
 # Same as above but showing Common Name:
-echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -subject | sed 's/^.*CN=\(.*\)$/\1/'
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -subject | sed 's/^.*CN *= *\(.*\)$/\1/'
 
 # Get all the cerificate and the CA chain that is being sent and output their subject:
 ## Note: Went with the full BEGIN & END certificate label regex match for increased understanding
@@ -86,7 +86,7 @@ echo -e "Q\n" | openssl s_client -showcerts -servername $testSNI -connect $testS
 awk 'BEGIN { x509 = "openssl x509 -noout -subject" }
     /-----BEGIN CERTIFICATE-----/ { a = "" }
     { a = a $0 RS }
-    /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN=\(.*\)$/\1/'
+    /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN *= *\(.*\)$/\1/'
 
 # Get the SAN(s) from the server certificate:
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -i DNS | sed "s/^[ \t]*//"
@@ -95,7 +95,7 @@ echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$tes
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -issuer
 
 # Same as above just show just the Common Name of the issuer:
-echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -issuer | sed 's/^.*CN=\(.*\)$/\1/'
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -issuer | sed 's/^.*CN *= *\(.*\)$/\1/'
 
 # Get subject public key info:
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | awk '/Subject Public Key Info:/,/X509/{print $0}' | grep -v "Subject Public Key Info:" | grep Key | tr '\n' ',' | xargs | sed 's/,$//'
@@ -145,12 +145,12 @@ echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$tes
 # Get all the cerificate and the CA chain that is being sent, split into separate files and renamed to their subject
 # replacing spaces & commans with underscores:
 # Note: Broke it down to 2 commands for better readability
-echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:443 > /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
-for cert in *.pem; do newname=$(openssl x509 -noout -subject -in $cert | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; done
+echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:443 < /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+for cert in *.pem; do newname=$(openssl x509 -noout -subject -in $cert | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; done
 
 # Same as above but create a CA chain file:
-echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:443 > /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
-for cert in *.pem; do newname=$(openssl x509 -noout -subject -in $cert | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; cat $cert >> ca_certs.pem; mv $cert $newname; done
+echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:443 < /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+for cert in *.pem; do newname=$(openssl x509 -noout -subject -in $cert | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; cat $cert >> ca_certs.pem; mv $cert $newname; done
 
 ## Miscellaneous Port connectivity tests
 # Requires the bash shell
