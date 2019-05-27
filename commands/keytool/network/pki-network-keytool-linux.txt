@@ -101,3 +101,8 @@ $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,
 
 ## SHA256
 $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA256:" |  xargs
+
+# Get CA chain from remote server and import to trust store:
+# Note: Broke it down to 2 commands for better readability
+$myKeytool -printcert -sslserver $testSubject:$testPort -rfc | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+for cert in cert*.pem; do if [ $cert != cert1.pem ]; then newname=$($myKeytool -printcert -v -file $cert | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; caName=$(echo $newname | sed s/.pem//); $myKeytool -import -trustcacerts -file $newname -alias $caName -keystore cacerts.jks -storepass password; fi; done

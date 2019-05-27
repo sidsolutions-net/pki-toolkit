@@ -131,9 +131,9 @@ $myKeytool -list -v -keystore keystore.jks -storepass password | grep Owner |  s
 $myKeytool -list -v -keystore keystore.jks -storepass password | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1
 
 ## Get certificate(s) aliases:
-$myKeytool -list -v -keystore keystore.jks -storepass password | grep "Alias name:" |  sed 's/^.*Alias name: \(.*\)$/\1/'
+$myKeytool -list -v -keystore cacerts.jks -storepass password | grep "Alias name:" |  sed 's/^.*Alias name: \(.*\)$/\1/'
 
-## Delete certificate from keystore
+## Delete a certificate from keystore
 $myKeytool -delete -alias $testSubject -keystore keystore.jks -storepass password
 
 ## Export certificate from keystore
@@ -141,3 +141,8 @@ $myKeytool -export -alias $testSubject -keystore keystore.jks -storepass passwor
 
 ## Change keystore password
 $myKeytool -storepasswd -new new_password -keystore keystore.jks -storepass password
+
+## Get CA chain from remote server and import to trust store:
+# Note: Broke it down to 2 commands for better readability
+$myKeytool -printcert -sslserver $testSubject:443 -rfc | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+for cert in cert*.pem; do if [ $cert != cert1.pem ]; then newname=$($myKeytool -printcert -v -file $cert | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; caName=$(echo $newname | sed s/.pem//); $myKeytool -import -trustcacerts -file $newname -alias $caName -keystore cacerts.jks -storepass password; fi; done

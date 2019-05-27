@@ -88,6 +88,10 @@ openssl x509 -in $testSubject.pem -noout -subject | sed 's/^.*CN=\(.*\)$/\1/'
 echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:443 > /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
 for cert in *.pem; do newname=$(openssl x509 -noout -subject -in $cert | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; done
 
+# Same as above but create a CA chain file:
+echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:443 > /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+for cert in *.pem; do newname=$(openssl x509 -noout -subject -in $cert | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; cat $cert >> ca_certs.pem; mv $cert $newname; done
+
 Get the SAN(s) from the server certificate:
 openssl x509 -in $testSubject.pem -noout -text | grep -i DNS | sed "s/^[ \t]*//"
 

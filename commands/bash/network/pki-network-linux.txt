@@ -142,6 +142,16 @@ echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$tes
 # Get the server's certificate public key:
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -fingerprint -pubkey
 
+# Get all the cerificate and the CA chain that is being sent, split into separate files and renamed to their subject
+# replacing spaces & commans with underscores:
+# Note: Broke it down to 2 commands for better readability
+echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:443 > /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+for cert in *.pem; do newname=$(openssl x509 -noout -subject -in $cert | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; done
+
+# Same as above but create a CA chain file:
+echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:443 > /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+for cert in *.pem; do newname=$(openssl x509 -noout -subject -in $cert | sed 's/^.*CN=\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; cat $cert >> ca_certs.pem; mv $cert $newname; done
+
 ## Miscellaneous Port connectivity tests
 # Requires the bash shell
 (echo >/dev/tcp/$testSubject/$testPort) &>/dev/null && echo "Open $testPort" || echo "Close $testPort"
