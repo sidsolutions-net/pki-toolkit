@@ -1,8 +1,8 @@
 #################################################################
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
-#  Date       : 04/01/2019
-#  Version    : 1.0
+#  Date       : 05/27/2019
+#  Version    : 1.3
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
@@ -14,17 +14,19 @@
 #   and pre & post validation of certificate deployment
 #
 # Requirements:
-# - CSR generation
+# - CSR generation & validation
 # - dates
 # - subject / CN
 # - CA chain
 # - SANs entries
 # - issuer
 # - signature algorithm
-# - key pair match
 # - serial number
+# - Key & Extended Key Usage
 # - thumbprint / fingerprint
-# - public key
+# - Keystore
+# - Trust store
+# - Keystore & PFX / P12 conversion
 #
 # Method:
 # - keytool with standard shell commands
@@ -33,12 +35,12 @@
 # - Set test subject in an environment variable
 # - Set your values like subject
 #   accordingly. Find & replace the file extensions
-#   (.csr, .key, .pem, etc) if necessary
+#   (.csr, .jks, .pem, etc) if necessary
 #
 # Notes:
 # - Works! Great for both employee & client education.
 #
-#   $Id: pki-file-keytool-linux.txt, v 1.0
+#   $Id: pki-file-keytool-linux.txt, v 1.3
 #################################################################
 
 ## Windows Commands
@@ -56,9 +58,6 @@ $myKeytool -genkey -alias $testSubject -keyalg RSA -keysize 2048 -keystore keyst
 # Generate a CSR for existing keystore
 $myKeytool -certreq -alias $testSubject -keystore keystore.jks -file $testSubject.csr
 
-# Generate new keystore and self signed certificate
-$myKeytool -genkey -alias $testSubject -keyalg RSA -keysize 2048 -validity 360 -keystore selfsigned-keystore.jks -dname "CN=example.com, O=SID Solutions, OU=Resume Department, L=Fort Walton Beach, ST=Florida, C=US" -storepass password -keypass password
-
 # Validate your CSR
 ## Subject
 $myKeytool -printcertreq -file $testSubject.csr | grep "Subject:"
@@ -68,6 +67,10 @@ $myKeytool -printcertreq -file $testSubject.csr | grep "Public Key:"
 
 ## Signature algorithm
 $myKeytool -printcertreq -file $testSubject.csr | grep "Signature algorithm:"
+
+# Import signed certificate for your CSR:
+# Note: The alias should be for the same CSR in order for the private key to match
+$myKeytool -import -trustcacerts -alias $testSubject -file $testSubject.crt -keystore keystore.jks -storepass password
 
 # Get the server certificate's begin and end dates:
 $myKeytool -printcert -v -file $testSubject.pem | grep Valid
@@ -124,6 +127,9 @@ $myKeytool -printcert -v -file $testSubject.pem | awk '/Certificate fingerprints
 $myKeytool -printcert -v -file $testSubject.pem | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA256:" |  xargs
 
 # Keystore commands
+## Generate new keystore and self signed certificate
+$myKeytool -genkey -alias $testSubject -keyalg RSA -keysize 2048 -validity 360 -keystore selfsigned-keystore.jks -dname "CN=example.com, O=SID Solutions, OU=Resume Department, L=Fort Walton Beach, ST=Florida, C=US" -storepass password -keypass password
+
 ## Get certificate(s) subject:
 $myKeytool -list -v -keystore keystore.jks -storepass password | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/'
 
@@ -142,7 +148,24 @@ $myKeytool -export -alias $testSubject -keystore keystore.jks -storepass passwor
 ## Change keystore password
 $myKeytool -storepasswd -new new_password -keystore keystore.jks -storepass password
 
+# Trust store commands
+## List the trusted certificate entries:
+$myKeytool -list -v -keystore cacerts.jks -storepass password | awk '/Entry type: trustedCertEntry/, /Owner:/ {print $0}' | grep Owner | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1
+
 ## Get CA chain from remote server and import to trust store:
 # Note: Broke it down to 2 commands for better readability
 $myKeytool -printcert -sslserver $testSubject:443 -rfc | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
 for cert in cert*.pem; do if [ $cert != cert1.pem ]; then newname=$($myKeytool -printcert -v -file $cert | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; caName=$(echo $newname | sed s/.pem//); $myKeytool -import -trustcacerts -file $newname -alias $caName -keystore cacerts.jks -storepass password; fi; done
+
+## Export all trusted certificate entries to separate files:
+for cert in `$myKeytool -list -v -keystore cacerts.jks -storepass password | awk '/Alias name:/, /Entry type: trustedCertEntry/ {print $0}' | grep Alias | sed 's/^.*Alias name: \(.*\)$/\1/'`; do `$myKeytool -exportcert -keystore cacerts.jks -storepass password -alias $cert -rfc -file ${cert}.crt`; done
+
+## Export all trusted certificate entries to a single CA chain file:
+for cert in `$myKeytool -list -v -keystore cacerts.jks -storepass password | awk '/Alias name:/, /Entry type: trustedCertEntry/ {print $0}' | grep Alias | sed 's/^.*Alias name: \(.*\)$/\1/'`; do `$myKeytool -exportcert -keystore cacerts.jks -storepass password -alias $cert -rfc >> cacerts.pem`; done
+
+# Conversion commands
+## Keystore to PFX / P12:
+$myKeytool -importkeystore -srckeystore keystore.jks -srcstoretype JKS -deststoretype PKCS12 -destkeystore $testSubject.pfx
+
+## PFX / P12 to Keystore:
+$myKeytool -importkeystore -srckeystore $testSubject.pfx -srcstoretype pkcs12 -destkeystore new_keystore.jks -deststoretype JKS

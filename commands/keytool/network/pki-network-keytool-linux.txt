@@ -24,6 +24,7 @@
 # - serial number
 # - Key & Extended Key Usage
 # - CRL
+# - Import remote CA Chain into JKS
 #
 # Method:
 # - keytool with standard shell commands
@@ -97,10 +98,10 @@ $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,
 
 # Get the server's certificate thumbprints / fingerprints:
 ## SHA1 - Microsoft's preference
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA1:" |  xargs
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/Certificate fingerprints/,/Signature/ {print $0}' | grep "SHA1:" |  xargs
 
 ## SHA256
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA256:" |  xargs
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/Certificate fingerprints/,/Signature/ {print $0}' | grep "SHA256:" |  xargs
 
 # Get CA chain from remote server and import to trust store:
 # Note: Broke it down to 2 commands for better readability

@@ -14,7 +14,7 @@
 #   and pre & post validation of certificate deployment
 #
 # Requirements:
-# - CSR generation
+# - CSR generation & validation
 # - dates
 # - subject / CN
 # - CA chain
@@ -38,7 +38,7 @@
 # - Set test subject in an environment variable
 # - Set your values like subject
 #   accordingly. Find & replace the file extensions
-#   (.csr, .key, .pem, etc) if necessary
+#   (.csr, .jks, .pem, etc) if necessary
 #
 # Notes:
 # - Works! Great for both employee & client education.
@@ -90,12 +90,17 @@ openssl x509 -in $testSubject.pem -noout -subject | sed 's/^.*CN *= *\(.*\)$/\1/
 echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:443 < /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
 for cert in *.pem; do newname=$(openssl x509 -noout -subject -in $cert | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; done
 
-# Same as above but create a CA chain file:
+# Get all the cerificate and the CA chain that is being sent, split into separate files and append
+# just the CAs to ca_certs.pem file:
+# Note: Broke it down to 2 commands for better readability
 echo -e "Q\n" | openssl s_client -showcerts -servername $testSubject -connect $testSubject:443 < /dev/null 2>&1 | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
 for cert in *.pem; do if [ $cert != cert1.pem ]; then newname=$(openssl x509 -noout -subject -in $cert | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; cat $cert >> ca_certs.pem; fi; done
 
 # Get the subjects of the CA in a chain file:
-
+cat ca_certs.pem |awk 'BEGIN { x509 = "openssl x509 -noout -subject" }
+    /-----BEGIN CERTIFICATE-----/ { a = "" }
+    { a = a $0 RS }
+    /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN *= *\(.*\)$/\1/'
 
 Get the SAN(s) from the server certificate:
 openssl x509 -in $testSubject.pem -noout -text | grep -i DNS | sed "s/^[ \t]*//"
