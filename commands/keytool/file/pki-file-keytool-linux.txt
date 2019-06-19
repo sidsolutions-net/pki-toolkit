@@ -43,7 +43,7 @@
 #   $Id: pki-file-keytool-linux.txt, v 1.3
 #################################################################
 
-## Windows Commands
+## Linux Commands
 # Set your keytool path. Allows for testing with multiple
 # version of Java
 myKeytool="/path/to/keytool"
@@ -87,7 +87,7 @@ $myKeytool -printcert -v -file $testSubject.pem | grep Owner |  sed 's/^.*Owner:
 # Get all the cerificate and the CA chain that is being sent, split into separate files and renamed to their subject
 # replacing spaces & commans with underscores:
 # Note: Broke it down to 2 commands for better readability
-$myKeytool -printcert -sslserver extservices3.intg.apptoapp.org:443 -rfc | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
+$myKeytool -printcert -sslserver $testSubject:443 -rfc | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
 for cert in cert*.pem; do newname=$($myKeytool -printcert -v -file $cert | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; done
 
 Get the SAN(s) from the server certificate:

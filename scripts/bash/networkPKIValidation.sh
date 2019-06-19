@@ -72,6 +72,7 @@
 #
 # - 1.3
 #   - Added Subject Public Key Info
+#   - Better handling of spaces on "CN = "
 # - 1.2
 #   - Added TLS Client Certificate Authentication detection
 #   - Client Certificate Types
