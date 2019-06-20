@@ -38,7 +38,7 @@
 # - Set test subject in an environment variable
 # - Set your values like subject
 #   accordingly. Find & replace the file extensions
-#   (.csr, .jks, .pem, etc) if necessary
+#   (.csr, .crt, .pem, etc) if necessary
 #
 # Notes:
 # - Works! Great for both employee & client education.
