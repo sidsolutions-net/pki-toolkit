@@ -18,7 +18,7 @@
 # - dates
 # - subject / CN
 # - CA chain
-# - SANs entries
+# - DNS SANs entries
 # - issuer
 # - signature algorithm
 # - key pair match
@@ -45,7 +45,7 @@
 # Set your keytool path. Allows for testing with multiple
 # version of Java
 
-myKeyTool="C:\Program Files (x86)\Java\jre1.8.0_201\bin\keytool"
+SET myKeyTool="C:\Program Files (x86)\Java\jre1.8.0_201\bin\keytool"
 
 # Initialize with test subject
 ## Replace with correct value for your test case

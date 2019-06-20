@@ -1,8 +1,8 @@
 #################################################################
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
-#  Date       : 04/01/2019
-#  Version    : 1.0
+#  Date       : 06/19/2019
+#  Version    : 1.3
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
@@ -18,7 +18,7 @@
 # - dates
 # - subject / CN
 # - CA chain
-# - SANs entries
+# - DNS SANs entries
 # - issuer
 # - signature algorithm
 # - key pair match
@@ -38,15 +38,96 @@
 # Notes:
 # - Works! Great for both employee & client education.
 #
-#   $Id: pki-file-keytool-windows.txt, v 1.0
+#   $Id: pki-file-keytool-windows.txt, v 1.3
 #################################################################
 
 ## Windows Commands
 # Set your keytool path. Allows for testing with multiple
 # version of Java
 
-myKeyTool="C:\Program Files (x86)\Java\jre1.8.0_201\bin\keytool"
+SET myKeytool="C:\your\java\path\bin\keytool"
 
 # Initialize with test subject
 ## Replace with correct value for your test case
 SET testSubject="example.com"
+
+# Generate a new keystore which requires CSR and private key generation
+%myKeytool% -genkey -alias %testSubject% -keyalg RSA -keysize 2048 -keystore keystore.jks -dname "CN=example.com, O=SID Solutions, OU=Resume Department, L=Fort Walton Beach, ST=Florida, C=US" -storepass password -keypass password
+
+# Generate a CSR for existing keystore
+%myKeytool% -certreq -alias %testSubject% -keystore keystore.jks -storepass password -file %testSubject%.csr
+
+# Validate your CSR
+## Subject
+%myKeytool% -printcertreq -file %testSubject%.csr | findstr /c:"Subject:"
+
+## Public Key Info
+%myKeytool% -printcertreq -file %testSubject%.csr | findstr /c:"Public Key:"
+
+## Signature algorithm
+%myKeytool% -printcertreq -file %testSubject%.csr | findstr /c:"Signature algorithm:"
+
+# Import signed certificate for your CSR:
+# Note: The alias should be for the same CSR in order for the private key to match
+%myKeytool% -import -trustcacerts -alias %testSubject% -file %testSubject%.crt -keystore keystore.jks -storepass password
+
+# Get the server certificate's begin and end dates:
+%myKeytool% -printcert -v -file %testSubject%.pem | findstr /c:"Valid"
+
+# Get the server certificate's subject:
+%myKeytool% -printcert -v -file %testSubject%.pem | findstr /c:"Owner:"
+
+# Same as above but showing Common Name:
+for /f "tokens=2 delims==" %i in ('%myKeytool% -printcert -v -file cert.pem ^| findstr /c:Owner') do @echo %i | for /f "tokens=1 delims=," %f in ('more') do @echo %f
+
+# Get the DNS SAN(s) from the server certificate:
+%myKeytool% -printcert -v -file %testSubject%.pem | findstr /c:"DNSName"
+
+# Get the issuer of the server certificate:
+%myKeytool% -printcert -v -file %testSubject%.pem | findstr /c:"Issuer:"
+
+# Same as above just show just the Common Name of the issuer:
+for /f "tokens=2 delims==" %i in ('%myKeytool% -printcert -v -file cert.pem ^| findstr /c:Issuer') do @echo %i | for /f "tokens=1 delims=," %f in ('more') do @echo %f
+
+# Get subject public key info:
+%myKeytool% -printcert -v -file %testSubject%.pem | findstr /c:"Subject Public Key Algorithm:"
+
+# Get the signature algorithm of the server certificate:
+# Question: Why is the signature algorithm repeated in a certificate?
+# Answer:   https://tools.ietf.org/html/rfc6211
+%myKeytool% -printcert -v -file %testSubject%.pem | findstr /c:"Signature algorithm name:"
+
+# Get the certificate's serial number:
+%myKeytool% -printcert -v -file %testSubject%.pem | findstr /c:"Serial number:"
+
+# Get the certificate's CRL:
+%myKeytool% -printcert -v -file %testSubject%.pem | findstr /c:"[URIName:"
+
+# Keystore commands
+## Generate new keystore and self signed certificate
+%myKeytool% -genkey -alias %testSubject% -keyalg RSA -keysize 2048 -validity 360 -keystore selfsigned-keystore.jks -dname "CN=example.com, O=SID Solutions, OU=Resume Department, L=Fort Walton Beach, ST=Florida, C=US" -storepass password -keypass password
+
+## Get certificate(s) subject:
+%myKeytool% -list -v -keystore keystore.jks -storepass password 2>null | findstr /c:"Owner"
+
+## Same as above but just Common Name:
+for /f "tokens=2 delims==" %i in ('%myKeytool% -list -v -keystore keystore.jks -storepass password 2^>nul^| findstr /c:Owner') do @echo %i | for /f "tokens=1 delims=," %f in ('more') do @echo %f
+
+## Get certificate(s) aliases:
+for /f "tokens=2 delims=:" %i in ('%myKeytool% -list -v -keystore keystore.jks -storepass password 2^>nul^| findstr /c:Alias') do @echo %i
+
+## Delete a certificate from keystore
+%myKeytool% -delete -alias %testSubject% -keystore keystore.jks -storepass password
+
+## Export certificate from keystore
+%myKeytool% -export -alias %testSubject% -keystore keystore.jks -storepass password
+
+## Change keystore password
+%myKeytool% -storepasswd -new new_password -keystore keystore.jks -storepass password
+
+# Conversion commands
+## Keystore to PFX / P12:
+%myKeytool% -importkeystore -srckeystore keystore.jks -srcstorepass password -destkeystore %testSubject%.pfx -deststorepass password -deststoretype pkcs12
+
+## PFX / P12 to Keystore:
+%myKeytool% -importkeystore -srckeystore %testSubject%.pfx -srcstorepass password -destkeystore keystore.jks -deststorepass password -deststoretype JKS

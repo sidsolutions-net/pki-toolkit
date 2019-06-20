@@ -19,7 +19,7 @@
 # - subject / CN
 # - CA chain
 # - CA chain PEM creation
-# - SANs entries
+# - DNS SANs entries
 # - issuer
 # - subject public key info
 # - signature algorithm
@@ -102,7 +102,7 @@ cat ca_certs.pem |awk 'BEGIN { x509 = "openssl x509 -noout -subject" }
     { a = a $0 RS }
     /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN *= *\(.*\)$/\1/'
 
-Get the SAN(s) from the server certificate:
+Get the DNS SAN(s) from the server certificate:
 openssl x509 -in $testSubject.pem -noout -text | grep -i DNS | sed "s/^[ \t]*//"
 
 # Get the issuer of the server certificate:

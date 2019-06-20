@@ -22,7 +22,7 @@
 # - End Date
 # - Days to Expiration
 # - CA chain
-# - SANs entries
+# - DNS SANs entries
 # - Issuer
 # - Subject Public Key Info
 # - Signature Algorithm
@@ -286,7 +286,7 @@ if [ -z $EXPIRY ]
 fi
 
 # Add the column labels to the output file
-echo "Host,SNI,Port,Lookup,Port Test,Common Name,LDAPv3 DN,Dates,End Date,Days To Expiration,CA Chain,SANs,Issuer,Subject Public Key Info,Signature Algorithm,Serial Number,Key Usage,Extended Key Usage,CRL Url,CA Chain Validation,TLS Client Authentication,Client Certificate Types,Requested Signature Algorithms,Acceptable Client Certificate CA Names,OCSP Check,CRL Status,Layer 7 Check" >$OUTPUT
+echo "Host,SNI,Port,Lookup,Port Test,Common Name,LDAPv3 DN,Dates,End Date,Days To Expiration,CA Chain,DNS SANs,Issuer,Subject Public Key Info,Signature Algorithm,Serial Number,Key Usage,Extended Key Usage,CRL Url,CA Chain Validation,TLS Client Authentication,Client Certificate Types,Requested Signature Algorithms,Acceptable Client Certificate CA Names,OCSP Check,CRL Status,Layer 7 Check" >$OUTPUT
 
 # Initialize Internal Field Separator
 OLDIFS=$IFS
@@ -402,7 +402,7 @@ while read host sni port
       echo -e "   End Date: \033[1;33m$endDate\033[0m"
       echo -e "   Days to Expiration: \033[1;33m$daysToExpiry\033[0m"
       echo -e "   CA Chain: \033[1;33m$caChain\033[0m"
-      echo -e "   SANs: \033[1;33m$san\033[0m"
+      echo -e "   DNS SANs: \033[1;33m$san\033[0m"
       echo -e "   Issuer: \033[1;33m$issuer\033[0m"
       echo -e "   Subject Pubic Key Info: \033[1;33m$publicKeyInfo\033[0m"
       echo -e "   Signature Algorithm: \033[1;33m$signature\033[0m"
@@ -465,7 +465,7 @@ while read host sni port
       echo -e "   End Date: \033[1;33m$endDate\033[0m"
       echo -e "   Days to Expiration: \033[1;33m$daysToExpiry\033[0m"
       echo -e "   CA Chain: \033[1;33m$caChain\033[0m"
-      echo -e "   SANs: \033[1;33m$san\033[0m"
+      echo -e "   DNS SANs: \033[1;33m$san\033[0m"
       echo -e "   Issuer: \033[1;33m$issuer\033[0m"
       echo -e "   Subject Pubic Key Info: \033[1;33m$publicKeyInfo\033[0m"
       echo -e "   Signature Algorithm: \033[1;33m$signature\033[0m"
@@ -634,9 +634,9 @@ while read host sni port
   if [[ "$san" =~ "Expecting: TRUSTED" ]];
     then
       san="Failed"
-      echo -e "   SANs: \033[1;31m$san\033[0m"
+      echo -e "   DNS SANs: \033[1;31m$san\033[0m"
     else
-      echo -e "   SANs: \033[1;32m$san\033[0m"
+      echo -e "   DNS SANs: \033[1;32m$san\033[0m"
 
       # No real CSV spec, see https://www.csvreader.com/csv_format.php
       # Uncomment and Comment or experiment as needed

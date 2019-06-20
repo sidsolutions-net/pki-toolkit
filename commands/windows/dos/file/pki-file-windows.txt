@@ -18,7 +18,7 @@
 # - dates
 # - subject / CN
 # - CA chain
-# - SANs entries
+# - DNS SANs entries
 # - issuer
 # - signature algorithm
 # - key pair match
@@ -88,7 +88,7 @@ openssl x509 -in %testSubject%.pem -noout -subject
 # Same as above but showing Common Name:
 for /f "tokens=3 delims==" %i in ('openssl x509 -in %testSubject%.pem -noout -subject') do @echo %i
 
-# Get the SAN(s) from the server certificate:
+# Get the DNS SAN(s) from the server certificate:
 openssl x509 -in %testSubject%.pem -noout -text | findstr DNS
 
 # Get the issuer of the server certificate:

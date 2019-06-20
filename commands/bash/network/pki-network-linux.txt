@@ -17,7 +17,7 @@
 # - dates
 # - subject / CN
 # - CA chain
-# - SANs entries
+# - DNS SANs entries
 # - issuer
 # - subject public key info
 # - signature algorithm
@@ -88,7 +88,7 @@ awk 'BEGIN { x509 = "openssl x509 -noout -subject" }
     { a = a $0 RS }
     /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN *= *\(.*\)$/\1/'
 
-# Get the SAN(s) from the server certificate:
+# Get the DNS SAN(s) from the server certificate:
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -i DNS | sed "s/^[ \t]*//"
 
 # Get the issuer of the server certificate:

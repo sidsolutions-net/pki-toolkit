@@ -17,7 +17,7 @@
 # - dates
 # - subject / CN
 # - CA chain
-# - SANs entries
+# - DNS SANs entries
 # - issuer
 # - subject public key info
 # - signature algorithm
@@ -69,7 +69,7 @@ $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,
 # Get all the cerificate and the CA chain that is being sent and output their subject:
 $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #/, /#1: ObjectId:/ { a = a $0 RS} { print a; a=""}' |awk 'NR==1,/Certificate #1/{sub(/(.*)/, "")}'1| grep Owner | sed 's/^.*CN=\(.*,\)/\1/'| cut -d ',' -f 1
 
-# Get the SAN(s) from the server certificate:
+# Get the DNS SAN(s) from the server certificate:
 $myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep DNSName | sed 's/^[\t ]*//'
 
 # Get the issuer of the server certificate:

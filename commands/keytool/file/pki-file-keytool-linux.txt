@@ -18,7 +18,7 @@
 # - dates
 # - subject / CN
 # - CA chain
-# - SANs entries
+# - DNS SANs entries
 # - issuer
 # - signature algorithm
 # - serial number
@@ -90,7 +90,7 @@ $myKeytool -printcert -v -file $testSubject.pem | grep Owner |  sed 's/^.*Owner:
 $myKeytool -printcert -sslserver $testSubject:443 -rfc | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
 for cert in cert*.pem; do newname=$($myKeytool -printcert -v -file $cert | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; done
 
-Get the SAN(s) from the server certificate:
+# Get the DNS SAN(s) from the server certificate:
 $myKeytool -printcert -v -file $testSubject.pem | grep DNSName | sed 's/^[\t ]*//'
 
 # Get the issuer of the server certificate:
@@ -137,7 +137,7 @@ $myKeytool -list -v -keystore keystore.jks -storepass password | grep Owner |  s
 $myKeytool -list -v -keystore keystore.jks -storepass password | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1
 
 ## Get certificate(s) aliases:
-$myKeytool -list -v -keystore cacerts.jks -storepass password | grep "Alias name:" |  sed 's/^.*Alias name: \(.*\)$/\1/'
+$myKeytool -list -v -keystore keystore.jks -storepass password | grep "Alias name:" |  sed 's/^.*Alias name: \(.*\)$/\1/'
 
 ## Delete a certificate from keystore
 $myKeytool -delete -alias $testSubject -keystore keystore.jks -storepass password
@@ -165,7 +165,7 @@ for cert in `$myKeytool -list -v -keystore cacerts.jks -storepass password | awk
 
 # Conversion commands
 ## Keystore to PFX / P12:
-$myKeytool -importkeystore -srckeystore keystore.jks -srcstoretype JKS -deststoretype PKCS12 -destkeystore $testSubject.pfx
+$myKeytool -importkeystore -srckeystore keystore.jks -srcstorepass password -srcstoretype JKS -destkeystore $testSubject.pfx -deststorepass password -deststoretype PKCS12
 
 ## PFX / P12 to Keystore:
-$myKeytool -importkeystore -srckeystore $testSubject.pfx -srcstoretype pkcs12 -destkeystore new_keystore.jks -deststoretype JKS
+$myKeytool -importkeystore -srckeystore $testSubject.pfx -srcstorepass password -srcstoretype pkcs12 -destkeystore new_keystore.jks -deststorepass password -deststoretype JKS

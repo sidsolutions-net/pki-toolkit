@@ -17,7 +17,7 @@
 # - dates
 # - subject / CN
 # - CA chain - to do
-# - SANs entries
+# - DNS SANs entries
 # - issuer
 # - signature algorithm
 # - serial number
@@ -85,7 +85,7 @@ openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null 
 # you will have to wait until it times out. Ctl+C will end the connection but return nothing
 for /f "tokens=3 delims==" %i in ('openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2^>nul^| openssl x509 -noout -subject') do @echo %i | for /f "tokens=1 delims=," %f in ('more') do @echo %f
 
-# Get the SAN(s) from the server certificate
+# Get the DNS SAN(s) from the server certificate
 openssl s_client -servername %testSNI% -connect %testSubject%:%testPort% 2>null | openssl x509 -noout -text | findstr DNS
 
 # Get the issuer of the server certificate
