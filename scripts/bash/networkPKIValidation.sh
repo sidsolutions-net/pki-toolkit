@@ -4,7 +4,7 @@
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
 #  Date       : 05/19/2019
-#  Version    : 1.3
+#  Version    : 1.4
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
@@ -70,6 +70,8 @@
 #
 # Fixes & Enhancements:
 #
+# - 1.4
+#   - Added URI entry for Layer 7 check
 # - 1.3
 #   - Added Subject Public Key Info
 #   - Better handling of spaces on "CN = "
@@ -295,7 +297,7 @@ IFS=,
 # Line counter for input file errors
 line=0
 
-while read host sni port
+while read host sni port uri
   do
   # Increment here
   lineNo=$(($lineNo+1))
@@ -329,6 +331,15 @@ while read host sni port
       echo -e "\033[1;31mError: $port for $host isn't numerical on line: \033[0m$lineNo\n"
       exit 1
   fi
+
+  if [[ -z $uri ]]
+    then
+      uri = "/"
+  fi
+
+  if [[ "$uri" != "/"* ]]
+    then
+      echo -e "\033[1;31mError: $uri doesn't start with / on line: \033[0m$lineNo\n"
 
   echo -e "$host"
   echo -e "---------------------------------------"
@@ -930,7 +941,7 @@ while read host sni port
   # Layer 7 Head Check
   if [[ ! -z $LAYER7 ]]
     then
-      layer7=$((curl -s -k -I --connect-time 5 https://$host:$port/)< /dev/null 2>&1)
+      layer7=$((curl -s -k -I --connect-time 5 https://$host:$port$uri)< /dev/null 2>&1)
       if [[ "$layer7" =~ "curl: (" ]];
         then
           # Continue  with the rest of the certificate tests
