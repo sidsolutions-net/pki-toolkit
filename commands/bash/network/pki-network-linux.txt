@@ -1,8 +1,8 @@
 #################################################################
 #  Author     : Sid McLaurin
 #  Copyright  : Copyright (c) SID Solutions
-#  Date       : 05/26/2019
-#  Version    : 1.3
+#  Date       : 11/18/2019
+#  Version    : 1.4
 #  License    : GNU General Public License
 #  GitHub     : https://github.com/sidsolutions-net/pki-toolkit
 #################################################################
@@ -46,7 +46,12 @@
 #   attacks and firewalls. See the certificate & CA chain
 #   they see!
 #
-#   $Id: pki-network-linux.txt, v 1.3
+# Fixes & Enhancements:
+#
+# - 1.4
+#   - Add CN handling of LDAP DN certificates
+#
+#   $Id: pki-network-linux.txt, v 1.4
 #################################################################
 
 # Initialize with test subject
@@ -71,7 +76,7 @@ echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$tes
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -subject
 
 # Same as above but showing Common Name:
-echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -subject | sed 's/^.*CN *= *\(.*\)$/\1/'
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -subject | sed 's/^.*CN *= *\(.*\)$/\1/' | cut -d ',' -f 1
 
 # Get all the cerificate and the CA chain that is being sent and output their subject:
 ## Note: Went with the full BEGIN & END certificate label regex match for increased understanding
@@ -86,7 +91,7 @@ echo -e "Q\n" | openssl s_client -showcerts -servername $testSNI -connect $testS
 awk 'BEGIN { x509 = "openssl x509 -noout -subject" }
     /-----BEGIN CERTIFICATE-----/ { a = "" }
     { a = a $0 RS }
-    /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN *= *\(.*\)$/\1/'
+    /-----END CERTIFICATE-----/ { print a | x509; close(x509) }' | sed 's/^.*CN *= *\(.*\)$/\1/' | cut -d ',' -f 1
 
 # Get the DNS SAN(s) from the server certificate:
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -i DNS | sed "s/^[ \t]*//"
@@ -95,7 +100,7 @@ echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$tes
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -issuer
 
 # Same as above just show just the Common Name of the issuer:
-echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -issuer | sed 's/^.*CN *= *\(.*\)$/\1/'
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -issuer | sed 's/^.*CN *= *\(.*\)$/\1/' | cut -d ',' -f 1
 
 # Get subject public key info:
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | awk '/Subject Public Key Info:/,/X509/{print $0}' | grep -v "Subject Public Key Info:" | grep Key | tr '\n' ',' | xargs | sed 's/,$//'
@@ -121,13 +126,13 @@ echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$tes
 echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | openssl x509 -noout -text | grep -A 4 'X509v3 CRL Distribution Points' | grep "URI:" | sed 's/^.*URI:\(.*\)$/\1/'
 
 # Client Certificate Types:
-openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | grep -m1 "Client Certificate Types:"
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | grep -m1 "Client Certificate Types:"
 
 # Requested Signature Algorithms
-openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | grep -m1 "Requested Signature Algorithms:"
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 | grep -m1 "Requested Signature Algorithms:"
 
 # Acceptable Client Certificate CA Name:
-openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 |awk 'BEGIN { cn = "grep CN" } /Acceptable client certificate/ { a = "" } { a = a $0 RS } /Client Certificate Types/ { print a | cn; close(cn) }'|sed 's/.*CN\(.*\)$/\1/'|cut -d '=' -f 2 | sed 's/\,.*//' | sed 's/^ *//' | cut -d '/' -f 1
+echo -e "Q\n" | openssl s_client -servername $testSNI -connect $testSubject:$testPort < /dev/null 2>&1 |awk 'BEGIN { cn = "grep CN" } /Acceptable client certificate/ { a = "" } { a = a $0 RS } /Client Certificate Types/ { print a | cn; close(cn) }'|sed 's/.*CN\(.*\)$/\1/'|cut -d '=' -f 2 | sed 's/\,.*//' | sed 's/^ *//' | cut -d '/' -f 1
 
 # Get the server's certificate thumbprints / fingerprints:
 ## SHA1 - Microsoft's preference

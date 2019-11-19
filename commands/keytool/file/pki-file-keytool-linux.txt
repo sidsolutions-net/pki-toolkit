@@ -79,10 +79,10 @@ $myKeytool -printcert -v -file $testSubject.pem | grep Valid
 $myKeytool -printcert -v -file $testSubject.pem | grep Valid | sed 's/^.*until: \(.*\)$/\1/'
 
 # Get the server certificate's subject:
-$myKeytool -printcert -v -file $testSubject.pem | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/'
+$myKeytool -printcert -v -file $testSubject.pem | grep Owner | sed 's/^.*Owner: \(.*\)$/\1/'
 
 # Same as above but showing Common Name:
-$myKeytool -printcert -v -file $testSubject.pem | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1
+$myKeytool -printcert -v -file $testSubject.pem | grep Owner | sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1
 
 # Get all the cerificate and the CA chain that is being sent, split into separate files and renamed to their subject
 # replacing spaces & commans with underscores:
@@ -121,23 +121,23 @@ $myKeytool -printcert -v -file $testSubject.pem | grep "\[URIName:" | sed 's/^[\
 
 # Get the server's certificate thumbprints / fingerprints:
 ## SHA1 - Microsoft's preference
-$myKeytool -printcert -v -file $testSubject.pem | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA1:" |  xargs
+$myKeytool -printcert -v -file $testSubject.pem | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA1:" | xargs
 
 ## SHA256
-$myKeytool -printcert -v -file $testSubject.pem | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA256:" |  xargs
+$myKeytool -printcert -v -file $testSubject.pem | awk '/Certificate fingerprints/,/Signature/{print $0}' | grep "SHA256:" | xargs
 
 # Keystore commands
 ## Generate new keystore and self signed certificate
 $myKeytool -genkey -alias $testSubject -keyalg RSA -keysize 2048 -validity 360 -keystore selfsigned-keystore.jks -dname "CN=example.com, O=SID Solutions, OU=Resume Department, L=Fort Walton Beach, ST=Florida, C=US" -storepass password -keypass password
 
 ## Get certificate(s) subject:
-$myKeytool -list -v -keystore keystore.jks -storepass password | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/'
+$myKeytool -list -v -keystore keystore.jks -storepass password | grep Owner | sed 's/^.*Owner: \(.*\)$/\1/'
 
 ## Same as above but just Common Name:
-$myKeytool -list -v -keystore keystore.jks -storepass password | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1
+$myKeytool -list -v -keystore keystore.jks -storepass password | grep Owner | sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1
 
 ## Get certificate(s) aliases:
-$myKeytool -list -v -keystore keystore.jks -storepass password | grep "Alias name:" |  sed 's/^.*Alias name: \(.*\)$/\1/'
+$myKeytool -list -v -keystore keystore.jks -storepass password | grep "Alias name:" | sed 's/^.*Alias name: \(.*\)$/\1/'
 
 ## Delete a certificate from keystore
 $myKeytool -delete -alias $testSubject -keystore keystore.jks -storepass password
@@ -155,7 +155,7 @@ $myKeytool -list -v -keystore cacerts.jks -storepass password | awk '/Entry type
 ## Get CA chain from remote server and import to trust store:
 # Note: Broke it down to 2 commands for better readability
 $myKeytool -printcert -sslserver $testSubject:443 -rfc | awk '/BEGIN /,/END /{ if(/BEGIN/){a++}; out="cert"a".pem"; print >out}'
-for cert in cert*.pem; do if [ $cert != cert1.pem ]; then newname=$($myKeytool -printcert -v -file $cert | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; caName=$(echo $newname | sed s/.pem//); $myKeytool -import -trustcacerts -file $newname -alias $caName -keystore cacerts.jks -storepass password; fi; done
+for cert in cert*.pem; do if [ $cert != cert1.pem ]; then newname=$($myKeytool -printcert -v -file $cert | grep Owner | sed 's/^.*Owner: \(.*\)$/\1/' | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1 | sed -n 's/[ ,.*]/_/g; s/__/_/g; s/^_//g;p').pem; mv $cert $newname; caName=$(echo $newname | sed s/.pem//); $myKeytool -import -trustcacerts -file $newname -alias $caName -keystore cacerts.jks -storepass password; fi; done
 
 ## Export all trusted certificate entries to separate files:
 for cert in `$myKeytool -list -v -keystore cacerts.jks -storepass password | awk '/Alias name:/, /Entry type: trustedCertEntry/ {print $0}' | grep Alias | sed 's/^.*Alias name: \(.*\)$/\1/'`; do `$myKeytool -exportcert -keystore cacerts.jks -storepass password -alias $cert -rfc -file ${cert}.crt`; done

@@ -55,53 +55,56 @@ testSubject="example.com"
 testPort="443"
 
 # Get the server certificate's begin and end dates:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Valid
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | grep Valid
 
 # Get the server certificate's expiration date:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Valid | sed 's/^.*until: \(.*\)$/\1/'
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | grep Valid | sed 's/^.*until: \(.*\)$/\1/'
 
 # Get the server certificate's subject:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Owner |  sed 's/^.*Owner: \(.*\)$/\1/'
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | grep Owner | sed 's/^.*Owner: \(.*\)$/\1/'
 
 # Same as above but showing Common Name:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Owner | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | grep Owner | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1
 
 # Get all the cerificate and the CA chain that is being sent and output their subject:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #/, /#1: ObjectId:/ { a = a $0 RS} { print a; a=""}' | awk 'NR==1,/Certificate #1/{sub(/(.*)/, "")}'1| grep Owner | sed 's/^.*CN=\(.*,\)/\1/'| cut -d ',' -f 1
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #/, /#1: ObjectId:/ { a = a $0 RS} { print a; a=""}' | grep Owner | sed 's/^.*CN=\(.*,\)/\1/'| cut -d ',' -f 1
+
+# Get just the CA chain that is being sent and output their subject:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #/, /#1: ObjectId:/ { a = a $0 RS} { print a; a=""}' | awk 'NR==1,/Certificate #1/{sub(/(.*)/, "")}'1 | grep Owner | sed 's/^.*CN=\(.*,\)/\1/' | cut -d ',' -f 1
 
 # Get the DNS SAN(s) from the server certificate:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep DNSName | sed 's/^[\t ]*//'
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | grep DNSName | sed 's/^[\t ]*//'
 
 # Get the issuer of the server certificate:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Issuer:
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | grep Issuer:
 
 # Same as above just show just the Common Name of the issuer:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep Issuer: | sed 's/^.*CN *= *\(.*\)/\1/'| cut -d ',' -f 1
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | grep Issuer: | sed 's/^.*CN *= *\(.*\)/\1/' | cut -d ',' -f 1
 
 # Get subject public key algorithm:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  |  grep "Subject Public Key Algorithm:"
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | grep "Subject Public Key Algorithm:"
 
 # Get the signature algorithm of the server certificate:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep "Signature algorithm name:"
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | grep "Signature algorithm name:"
 
 # Get the server certificate's serial number:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep "Serial number:"
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | grep "Serial number:"
 
 # Get the server certificate's key usage:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/KeyUsage /,/]/{print $0}'
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | awk '/KeyUsage /,/]/{print $0}'
 
 # Get the server certificate's extended key usage:
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/ExtendedKeyUsage/,/]/{print $0}'
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | awk '/ExtendedKeyUsage/,/]/{print $0}'
 
 # Get CRL
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | grep "\[URIName:" | sed 's/^[\t ]*//'
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | grep "\[URIName:" | sed 's/^[\t ]*//'
 
 # Get the server's certificate thumbprints / fingerprints:
 ## SHA1 - Microsoft's preference
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/Certificate fingerprints/,/Signature/ {print $0}' | grep "SHA1:" |  xargs
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | awk '/Certificate fingerprints/,/Signature/ {print $0}' | grep "SHA1:" | xargs
 
 ## SHA256
-$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}'  | awk '/Certificate fingerprints/,/Signature/ {print $0}' | grep "SHA256:" |  xargs
+$myKeytool -printcert -sslserver $testSubject:$testPort | awk '/Certificate #0/,/Certificate #1/ {print $0}' | awk '/Certificate fingerprints/,/Signature/ {print $0}' | grep "SHA256:" |  xargs
 
 # Get CA chain from remote server and import to trust store:
 # Note: Broke it down to 2 commands for better readability
